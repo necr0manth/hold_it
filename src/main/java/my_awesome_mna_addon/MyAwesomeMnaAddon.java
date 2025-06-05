@@ -3,6 +3,7 @@ package my_awesome_mna_addon;
 import com.mojang.logging.LogUtils;
 import my_awesome_mna_addon.init.*;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -23,16 +24,19 @@ public class MyAwesomeMnaAddon {
 		AwesomeBlocks.BLOCKS.register(modEventBus);
 		AwesomeItems.ITEMS.register(modEventBus);
 		AwesomeCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+//		KOT KOT KOT k
 //		AwesomeFactions.FACTIONS.register(modEventBus);
 //		AwesomeSpells.SHAPES.register(modEventBus);
 //		AwesomeSpells.EFFECTS.register(modEventBus);
-//		KOT KOT KOT k
 		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.addListener(this::tick);
 
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 	}
 
 	private void commonSetup(final FMLCommonSetupEvent event) {
 	}
+	private void tick(TickEvent.ClientTickEvent event){
 
+	}
 }
