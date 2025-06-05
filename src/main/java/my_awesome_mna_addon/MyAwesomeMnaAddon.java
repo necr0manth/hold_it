@@ -26,7 +26,7 @@ public class MyAwesomeMnaAddon {
 //		AwesomeFactions.FACTIONS.register(modEventBus);
 //		AwesomeSpells.SHAPES.register(modEventBus);
 //		AwesomeSpells.EFFECTS.register(modEventBus);
-//		KOT KOT KOT
+//		KOT KOT KOT k
 		MinecraftForge.EVENT_BUS.register(this);
 
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
