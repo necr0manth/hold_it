@@ -51,7 +51,7 @@ public class ComponentPorkWarrior extends SpellEffect {
 		
 		// Get the porkchop count
 		int count = ((ItemEntity)target.getEntity()).getItem().getCount();
-		// aboba2
+		// aboba1234
 		// Let's have a little fun.
 		// If the item entity has one pork chop, we are spawning a pig.
 		// If two, we are spawning a zombie pigman
