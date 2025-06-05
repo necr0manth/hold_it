@@ -1,5 +1,5 @@
 package my_awesome_mna_addon.content.factions;
-
+// bobr kurwa
 
 import com.mna.api.ManaAndArtificeMod;
 import com.mna.api.faction.BaseFaction;
