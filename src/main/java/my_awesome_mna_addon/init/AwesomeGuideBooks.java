@@ -7,9 +7,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber
-public interface AwesomeGuideBooks {
+public class AwesomeGuideBooks {
 	@SubscribeEvent
-	static void onRegisterGuidebooks(RegisterGuidebooksEvent event) {
+	public static void onRegisterGuidebooks(RegisterGuidebooksEvent event) {
 		event.getRegistry().addGuidebookPath(new ResourceLocation(MyAwesomeMnaAddon.MODID, "guide"));
 	}
 }

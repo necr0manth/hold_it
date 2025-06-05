@@ -15,7 +15,7 @@
 		"related_recipes": [
 			{
 				"type": "ritual",
-				"location": "examplemod:rituals/porcine"
+				"location": "my_awesome_mna_addon:rituals/ritual_govna"
 			}
 		]
 	},
@@ -35,7 +35,7 @@
 		"related_recipes": [
 			{
 				"type": "spell_part",
-        		"location": "examplemod:shapes/pork_pulse"
+        		"location": "my_awesome_mna_addon:shapes/pork_pulse"
 			}
 		]
 	},
@@ -55,7 +55,7 @@
 		"related_recipes": [
 			{
 				"type": "spell_part",
-        		"location": "examplemod:shapes/pork_warrior"
+        		"location": "my_awesome_mna_addon:shapes/pork_warrior"
 			}
 		]
 	}	
