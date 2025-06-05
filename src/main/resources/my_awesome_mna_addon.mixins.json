@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "my_awesome_mna_addon.mixins",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "my_awesome_mna_addon.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8"
+}

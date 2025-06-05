@@ -1,0 +1,41 @@
+modLoader="javafml"
+
+loaderVersion="[${neo_version},)"
+
+license="All Rights Reserved"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="My awesome mna addon"
+#logoFile="my_awesome_logo.png"
+#credits="" #optional
+authors="eblan"
+
+#displayTest="MATCH_VERSION" # if nothing is specified, MATCH_VERSION is the default when clientSideOnly=false, otherwise IGNORE_ALL_VERSION when clientSideOnly=true (#optional)
+
+description='''An awesome addon for an awesome mod'''
+
+[[dependencies.${mod_id}]]
+    modId="forge"
+    mandatory=true
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1]"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="mna"
+    mandatory=true
+    versionRange="[3.1.0.8]"
+    ordering="NONE"
+    side="BOTH"
+
+#[features.${mod_id}]
+#openGLVersion="[3.2,)"
