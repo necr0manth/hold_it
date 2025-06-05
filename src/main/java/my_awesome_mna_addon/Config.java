@@ -5,6 +5,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 
+import java.awt.*;
+
 
 @Mod.EventBusSubscriber(modid = MyAwesomeMnaAddon.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config {
@@ -19,6 +21,7 @@ public class Config {
 
 	@SubscribeEvent
 	static void onLoad(final ModConfigEvent event) {
+		System.out.println("test");
 //		sampleConfigValue = LOG_DIRT_BLOCK.get();
 	}
 }
