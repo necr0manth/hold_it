@@ -19,7 +19,7 @@ public class MyAwesomeMnaAddon {
 	public MyAwesomeMnaAddon() {
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		modEventBus.addListener(this::commonSetup);
-
+//
 		AwesomeBlocks.BLOCKS.register(modEventBus);
 		AwesomeItems.ITEMS.register(modEventBus);
 		AwesomeCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
