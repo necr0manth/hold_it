@@ -82,67 +82,69 @@ repositories {
 
 dependencies {
     minecraft "net.neoforged:forge:${minecraft_version}-${neo_version}"
-
-    def libraries = new File(file("/"), "libs")
-    if (!libraries.isDirectory()) libraries.mkdirs()
-
-    def libDir = new File(libraries, "all");
-    if (libDir.isDirectory()) {
-        libDir.eachFile { file ->
-            def splitPos = file.name.lastIndexOf("-")
-            def modartifact = file.name.substring(0, splitPos)
-            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
-            dependencies {
-                implementation fg.deobf(project.dependencies.create("_all:$modartifact:$modversion") {
-                    transitive = false
-                })
-            }
-        }
-    } else libDir.mkdir();
-
-    libDir = new File(libraries, "classpathOnly");
-    if (libDir.isDirectory()) {
-        libDir.eachFile { file ->
-            def splitPos = file.name.lastIndexOf("-")
-            def modartifact = file.name.substring(0, splitPos)
-            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
-            dependencies {
-                compileOnly fg.deobf(project.dependencies.create("_classpath:$modartifact:$modversion") {
-                    transitive = false
-                })
-            }
-        }
-    } else libDir.mkdir();
-
-    libDir = new File(libraries, "runtimeOnly");
-    if (libDir.isDirectory()) {
-        libDir.eachFile { file ->
-            def splitPos = file.name.lastIndexOf("-")
-            def modartifact = file.name.substring(0, splitPos)
-            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
-            dependencies {
-                runtimeOnly fg.deobf(project.dependencies.create("_runtime:$modartifact:$modversion") {
-                    transitive = false
-                })
-            }
-        }
-    } else libDir.mkdir();
-
-    libDir = new File(file("libraries"), "embedded");
-    if (libDir.isDirectory()) {
-        libDir.eachFile { file ->
-            def splitPos = file.name.lastIndexOf("-")
-            def modartifact = file.name.substring(0, splitPos)
-            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
-            def modreference = "lib:$modartifact:$modversion"
-
-            dependencies {
-                implementation project.dependencies.create(modreference) {
-                    transitive = false
-                }
-            }
-        }
-    } else libDir.mkdir();
+    implementation files("libs/all/curios-forge-5.14.1+1.20.1.jar")
+    implementation files("libs/all/geckolib-forge-1.20.1-4.7.1.2.jar")
+    implementation files("libs/all/mna-forge-1.20.1-3.1.0.8-all.jar")
+//    def libraries = new File(file("/"), "libs")
+//    if (!libraries.isDirectory()) libraries.mkdirs()
+//
+//    def libDir = new File(libraries, "all");
+//    if (libDir.isDirectory()) {
+//        libDir.eachFile { file ->
+//            def splitPos = file.name.lastIndexOf("-")
+//            def modartifact = file.name.substring(0, splitPos)
+//            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
+//            dependencies {
+//                implementation fg.deobf(project.dependencies.create("_all:$modartifact:$modversion") {
+//                    transitive = false
+//                })
+//            }
+//        }
+//    } else libDir.mkdir();
+//
+//    libDir = new File(libraries, "classpathOnly");
+//    if (libDir.isDirectory()) {
+//        libDir.eachFile { file ->
+//            def splitPos = file.name.lastIndexOf("-")
+//            def modartifact = file.name.substring(0, splitPos)
+//            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
+//            dependencies {
+//                compileOnly fg.deobf(project.dependencies.create("_classpath:$modartifact:$modversion") {
+//                    transitive = false
+//                })
+//            }
+//        }
+//    } else libDir.mkdir();
+//
+//    libDir = new File(libraries, "runtimeOnly");
+//    if (libDir.isDirectory()) {
+//        libDir.eachFile { file ->
+//            def splitPos = file.name.lastIndexOf("-")
+//            def modartifact = file.name.substring(0, splitPos)
+//            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
+//            dependencies {
+//                runtimeOnly fg.deobf(project.dependencies.create("_runtime:$modartifact:$modversion") {
+//                    transitive = false
+//                })
+//            }
+//        }
+//    } else libDir.mkdir();
+//
+//    libDir = new File(file("libraries"), "embedded");
+//    if (libDir.isDirectory()) {
+//        libDir.eachFile { file ->
+//            def splitPos = file.name.lastIndexOf("-")
+//            def modartifact = file.name.substring(0, splitPos)
+//            def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
+//            def modreference = "lib:$modartifact:$modversion"
+//
+//            dependencies {
+//                implementation project.dependencies.create(modreference) {
+//                    transitive = false
+//                }
+//            }
+//        }
+//    } else libDir.mkdir();
 }
 
 mixin {
