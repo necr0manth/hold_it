@@ -4,7 +4,9 @@ stages:
 build-job:     
   stage: deploy
   script:
-    - echo "Kek"
-
-
-
+    - mkdir output
+    - cp path/to/yourmod.jar output/
+  artifacts:
+    paths:
+      - output/yourmod.jar
+  when: manual
