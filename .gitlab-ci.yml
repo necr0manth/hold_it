@@ -1,0 +1,10 @@
+stages:
+  - deploy
+
+build-job:     
+  stage: deploy
+  script:
+    - echo "Kek"
+
+
+
