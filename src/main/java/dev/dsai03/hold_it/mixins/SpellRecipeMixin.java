@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(SpellRecipe.class)
 public class SpellRecipeMixin {
-	@Redirect(method = "getMaxChannelTime", at = @At(value = "INVOKE", target = "Lcom/mna/api/spells/parts/Shape;isChanneled()Z"))
+	@Redirect(method = "getMaxChannelTime", at = @At(value = "INVOKE", target = "Lcom/mna/api/spells/parts/Shape;isChanneled()Z"), remap = false)
 	boolean getMaxChannelTime(Shape shape) {
 		if (shape instanceof IChargeableSpellShape)
 			return true;
