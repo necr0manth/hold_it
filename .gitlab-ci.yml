@@ -1,0 +1,12 @@
+stages:
+  - deploy
+
+build-job:     
+  stage: deploy
+  script:
+    - mkdir output
+    - cp path/to/yourmod.jar output/
+  artifacts:
+    paths:
+      - output/yourmod.jar
+  when: manual
