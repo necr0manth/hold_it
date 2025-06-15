@@ -82,9 +82,12 @@ repositories {
 
 dependencies {
     minecraft "net.neoforged:forge:${minecraft_version}-${neo_version}"
-//    implementation files("libs/all/curios-forge-5.14.1+1.20.1.jar")
-//    implementation files("libs/all/geckolib-forge-1.20.1-4.7.1.2.jar")
-//    implementation files("libs/all/mna-forge-1.20.1-3.1.0.8-all.jar")
+    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.0-beta.5"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.0-beta.5")) {
+        jarJar.ranged(it, "[0.5.0-beta.5,)")
+    }
     def libraries = new File(file("/"), "libs")
     if (!libraries.isDirectory()) libraries.mkdirs()
 
@@ -94,11 +97,12 @@ dependencies {
             def splitPos = file.name.lastIndexOf("-")
             def modartifact = file.name.substring(0, splitPos)
             def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
-            dependencies {
-                implementation fg.deobf(project.dependencies.create("_all:$modartifact:$modversion") {
-                    transitive = false
-                })
-            }
+
+                implementation fg.deobf("huy:$modartifact:$modversion")
+//                compileOnly fg.deobf("huy:$modartifact:$modversion")
+//                implementation fg.deobf(project.dependencies.create("_all:$modartifact:$modversion") {
+//                    transitive = false
+//                })
         }
     } else libDir.mkdir();
 
