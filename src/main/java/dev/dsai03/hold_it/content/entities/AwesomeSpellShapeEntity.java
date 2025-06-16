@@ -45,6 +45,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
 	@Override
 	protected void defineSynchedData() {
+		super.defineSynchedData();
 		entityData.define(BALLS, new CompoundTag());
 	}
 
@@ -76,22 +77,29 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
 	protected void addAdditionalSaveData(CompoundTag compound) {
 		super.addAdditionalSaveData(compound);
-//		compound.put("balls", entityData.get(BALLS));
+		compound.put("balls", entityData.get(BALLS));
 	}
 
 	protected void readAdditionalSaveData(CompoundTag compound) {
 		super.readAdditionalSaveData(compound);
-//		if(compound.contains("balls"))
-//			entityData.set(BALLS, compound.getCompound("balls"));
+		if (compound.contains("balls"))
+			entityData.set(BALLS, compound.getCompound("balls"));
 	}
 
 	@Override
 	protected void chargeTick() {
+		commonTick();
+	}
+
+	void commonTick() {
+		if (level().isClientSide)
+			return;
+
 		var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
 		var projectiles = getBalls();
 		int maxProj = 5;
 		float speed = 0.25f;
-		float s = Math.min(getLifetime() / chargeTime(), 1);
+		float s = Math.min(getLifetime() / chargeTime(), 1)*defaultPower*maxProj;
 		int i = 0;
 		while (s > 0) {
 			float p;
@@ -132,11 +140,12 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 		}
 
 		saveBalls(projectiles);
+
 	}
 
 	@Override
 	protected void overChargeTick() {
-
+		commonTick();
 	}
 
 	@Override
@@ -154,8 +163,18 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 		return List.of();
 	}
 
+	public void applySpell() {
+		if(level().isClientSide)
+			return;
+		for (var ball : getBalls()) {
+			ball.shoot(getCaster().getLookAngle());
+			ball.setOwner(getCaster());
+			ball.setSpell(getSpell());
+		}
+	}
+
 	@Override
 	protected void onInterrupt() {
-
+		applySpell();
 	}
 }

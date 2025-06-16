@@ -1,7 +1,6 @@
 package dev.dsai03.hold_it.init.client;
 
-import dev.dsai03.hold_it.content.client.entity_renderers.AwesomeShapeEntityRenderer;
-import dev.dsai03.hold_it.content.client.entity_renderers.CoolShapeEntityRenderer;
+import dev.dsai03.hold_it.content.client.entity_renderers.EmptyEntityRenderer;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -15,7 +14,8 @@ public class AwesomeEntityRenderers {
 	@SubscribeEvent
 	@OnlyIn(Dist.CLIENT)
 	public static void registerEntityRenderingHandlers(FMLClientSetupEvent event) {
-		EntityRenderers.register(AwesomeEntityTypes.COOL_SHAPE.get(), CoolShapeEntityRenderer::new);
-		EntityRenderers.register(AwesomeEntityTypes.AWESOME_SHAPE.get(), AwesomeShapeEntityRenderer::new);
+		EntityRenderers.register(AwesomeEntityTypes.COOL_SHAPE.get(), EmptyEntityRenderer::new);
+		EntityRenderers.register(AwesomeEntityTypes.AWESOME_SHAPE.get(), EmptyEntityRenderer::new);
+		EntityRenderers.register(AwesomeEntityTypes.BALL_ENTITY_TYPE.get(), EmptyEntityRenderer::new);
 	}
 }

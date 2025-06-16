@@ -6,18 +6,19 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 
-public class CoolShapeEntityRenderer extends EntityRenderer<CoolShapeEntity> {
-	public CoolShapeEntityRenderer(EntityRendererProvider.Context pContext) {
+public class EmptyEntityRenderer<T extends Entity> extends EntityRenderer<T> {
+	public EmptyEntityRenderer(EntityRendererProvider.Context pContext) {
 		super(pContext);
 	}
 
 	@Override
-	public ResourceLocation getTextureLocation(CoolShapeEntity pEntity) {
+	public ResourceLocation getTextureLocation(T pEntity) {
 		return null;
 	}
 
-	public void render(CoolShapeEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
+	public void render(T pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
 
 	}
 }

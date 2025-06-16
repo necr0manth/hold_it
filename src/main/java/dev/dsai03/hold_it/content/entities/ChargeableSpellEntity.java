@@ -66,6 +66,10 @@ public abstract class ChargeableSpellEntity extends Entity {
 
 	public void tick() {
 		if (!level().isClientSide) {
+			if(getCaster() == null) {
+				discard();
+				return;
+			}
 			if (firstTimeTime == -1) {
 				firstTimeTime = System.nanoTime();
 			}
