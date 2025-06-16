@@ -1,10 +1,9 @@
-package dev.dsai03.hold_it.content.spells;
+package dev.dsai03.hold_it.content.spells.shapes;
 
 import com.mna.api.spells.attributes.AttributeValuePair;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellSource;
 import dev.dsai03.hold_it.content.entities.CoolShapeEntity;
-import dev.dsai03.hold_it.content.spells.shapes.BaseChargeableSpellShape;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
