@@ -73,7 +73,7 @@ public abstract class ChargeableSpellEntity extends Entity {
 		}
 		LivingEntity caster = getCaster();
 		SpellRecipe recipe = getSpell();
-		if (caster != null && caster.isAlive() && caster.level().dimension().equals(level().dimension()) && caster.getUseItemRemainingTicks() > 0 && SpellRecipe.stackContainsSpell(caster.getUseItem())) {
+		if (caster != null && caster.isAlive() && caster.level().dimension().equals(level().dimension()) && caster.getUseItemRemainingTicks() > 0) {
 			if (isOverCharged() && !level().isClientSide) {
 				applySpell();
 				stopCast();
