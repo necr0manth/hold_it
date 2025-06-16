@@ -93,7 +93,7 @@ dependencies {
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.0-beta.5")) {
         jarJar.ranged(it, "[0.5.0-beta.5,)")
     }
-    def libraries = new File(file("/"), "libs")
+    def libraries = file("$projectDir/libs")
     if (!libraries.isDirectory()) libraries.mkdirs()
 
     def libDir = new File(libraries, "all");
