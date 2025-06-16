@@ -1,0 +1,12 @@
+{
+	"item.hold_it.mark_of_the_example_faction": "Mark of the Example Faction",
+
+	"hold_it:pork_warrior": "Pork Warrior",
+	"hold_it:pork_warrior.desc.delay": "A delay in seconds before applying this component.",
+	"hold_it:pork_warrior.desc.duration": "How long the pork warrior will last.",
+	
+	"hold_it:pork_pulse": "Pork Pulse",
+	"hold_it:cool_shape": "Cool Shape",
+	"hold_it:pork_pulse.desc.delay": "A delay in seconds before applying this component.",
+	"hold_it:pork_pulse.desc.radius": "How large the pulse is to target dropped pork chops."
+}

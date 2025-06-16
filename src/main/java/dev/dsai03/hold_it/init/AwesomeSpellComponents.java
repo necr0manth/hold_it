@@ -10,5 +10,5 @@ import net.minecraftforge.registries.RegistryObject;
 
 public interface AwesomeSpellComponents {
 	DeferredRegister<SpellEffect> EFFECTS = DeferredRegister.create(RLoc.create("components"), MyAwesomeMnaAddon.MODID);
-	RegistryObject<ComponentPorkWarrior> PORK_WARRIOR = EFFECTS.register("pork_warrior", () -> new ComponentPorkWarrior(new ResourceLocation(MyAwesomeMnaAddon.MODID, "pork_warrior"), new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/pork_warrior.png")));
+//	RegistryObject<ComponentPorkWarrior> PORK_WARRIOR = EFFECTS.register("pork_warrior", () -> new ComponentPorkWarrior(new ResourceLocation(MyAwesomeMnaAddon.MODID, "pork_warrior"), new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/pork_warrior.png")));
 }

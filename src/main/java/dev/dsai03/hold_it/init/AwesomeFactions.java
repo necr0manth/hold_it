@@ -10,5 +10,5 @@ import net.minecraftforge.registries.RegistryObject;
 
 public interface AwesomeFactions {
 	DeferredRegister<IFaction> FACTIONS = DeferredRegister.create(RLoc.create("factions"), MyAwesomeMnaAddon.MODID);
-	RegistryObject<BaseFaction> EXAMPLE_FACTION = FACTIONS.register("a", ExampleFaction::new);
+//	RegistryObject<BaseFaction> EXAMPLE_FACTION = FACTIONS.register("a", ExampleFaction::new);
 }

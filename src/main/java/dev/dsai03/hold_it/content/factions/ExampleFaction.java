@@ -1,5 +1,4 @@
 package dev.dsai03.hold_it.content.factions;
-// bobr kurwa
 
 import com.mna.api.ManaAndArtificeMod;
 import com.mna.api.faction.BaseFaction;
@@ -12,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -33,14 +33,15 @@ public class ExampleFaction extends BaseFaction {
 	public ItemStack getFactionGrimoire() {
 		// This item stack is given to the player when they summon the FactionGrimoire.
 		// It is best to return your own grimoire here, but you can also return one of another faction or other items
-
-		return new ItemStack(AwesomeItems.MARK_OF_THE_EXAMPLE_FACTION.get());
+		return Items.STONE.getDefaultInstance();
+//		return new ItemStack(AwesomeItems.MARK_OF_THE_EXAMPLE_FACTION.get());
 	}
 
 	@Override
 	public Item getTokenItem() {
 		// The token/mark that are dropped by the monster of this faction and is used for trading
-		return AwesomeItems.MARK_OF_THE_EXAMPLE_FACTION.get();
+		return Items.STONE;
+//		return AwesomeItems.MARK_OF_THE_EXAMPLE_FACTION.get();
 	}
 
 	@Override
