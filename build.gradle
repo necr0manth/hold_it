@@ -42,7 +42,7 @@ minecraft {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
             if (System.env.MC_USERNAME != null) {
-                arg "--username ${System.env.MC_USERNAME}"
+                args '--username', System.env.MC_USERNAME
                 println "ADDED USERNAME '${System.env.MC_USERNAME}' INTO MC ARGS."
             }
 
@@ -103,11 +103,9 @@ dependencies {
             def modartifact = file.name.substring(0, splitPos)
             def modversion = file.name.substring(splitPos + 1, file.name.length() - 4)
 
-                implementation fg.deobf("huy:$modartifact:$modversion")
-//                compileOnly fg.deobf("huy:$modartifact:$modversion")
-//                implementation fg.deobf(project.dependencies.create("_all:$modartifact:$modversion") {
-//                    transitive = false
-//                })
+            implementation fg.deobf(project.dependencies.create("_all:$modartifact:$modversion") {
+                transitive = false
+            })
         }
     } else libDir.mkdir();
 
@@ -173,11 +171,11 @@ jar {
 
 tasks.withType(ProcessResources).configureEach {
     var replaceProperties = [
-            minecraft_version      : minecraft_version,
-            neo_version            : neo_version,
-            mod_id                 : mod_id,
-            mod_version            : mod_version,
-            mod_group_id           : mod_group_id
+            minecraft_version: minecraft_version,
+            neo_version      : neo_version,
+            mod_id           : mod_id,
+            mod_version      : mod_version,
+            mod_group_id     : mod_group_id
     ]
     inputs.properties replaceProperties
 
