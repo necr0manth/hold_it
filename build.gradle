@@ -41,6 +41,12 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
+            if (System.env.MC_USERNAME != null) {
+                arg "--username"
+                arg System.env.MC_USERNAME
+                println "ADDED USERNAME '${System.env.MC_USERNAME}' INTO MC ARGS."
+            }
+
         }
 
         server {
