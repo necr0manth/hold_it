@@ -14,6 +14,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,7 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 		System.out.println("Overcharging: " + tickCount);
 	}
 
+	@OnlyIn(Dist.CLIENT)
 	private void clientTick() {
 		var r = Math.min((float) tickCount / chargeTime(), 1) * radius();
 		int n = Mth.floor(r * r * r * 0.2);

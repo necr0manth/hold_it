@@ -2,7 +2,7 @@
   "required": true,
   "package": "dev.dsai03.hold_it.mixins",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "my_awesome_mna_addon.refmap.json",
+  "refmap": "hold_it.refmap.json",
   "mixins": [
     "SpellCasterMixin",
     "SpellRecipeMixin"
