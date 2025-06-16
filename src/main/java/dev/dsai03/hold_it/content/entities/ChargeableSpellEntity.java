@@ -33,9 +33,11 @@ import javax.annotation.Nullable;
 public abstract class ChargeableSpellEntity extends Entity {
 	public static final EntityDataAccessor<Integer> CASTER_ID = SynchedEntityData.defineId(ChargeableSpellEntity.class, EntityDataSerializers.INT);
 	public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(ChargeableSpellEntity.class, EntityDataSerializers.COMPOUND_TAG);
+	public static final EntityDataAccessor<Float> LIFETIME = SynchedEntityData.defineId(ChargeableSpellEntity.class, EntityDataSerializers.FLOAT);
 	private LivingEntity cachedCaster;
 	private SpellRecipe cachedRecipe;
 	private boolean wasCharged = false;
+	private long firstTimeTime = -1;
 
 	public ChargeableSpellEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
 		super(entityType, world);
@@ -63,6 +65,12 @@ public abstract class ChargeableSpellEntity extends Entity {
 	}
 
 	public void tick() {
+		if (!level().isClientSide) {
+			if (firstTimeTime == -1) {
+				firstTimeTime = System.nanoTime();
+			}
+			entityData.set(LIFETIME, (System.nanoTime() - firstTimeTime) / 1e9f);
+		}
 		LivingEntity caster = getCaster();
 		SpellRecipe recipe = getSpell();
 		if (caster != null && caster.isAlive() && caster.level().dimension().equals(level().dimension()) && caster.getUseItemRemainingTicks() > 0 && SpellRecipe.stackContainsSpell(caster.getUseItem())) {
@@ -137,6 +145,10 @@ public abstract class ChargeableSpellEntity extends Entity {
 		return cachedCaster;
 	}
 
+	public float getLifetime() {
+		return entityData.get(LIFETIME);
+	}
+
 	public void setCaster(LivingEntity caster) {
 		if (caster != null) {
 			entityData.set(CASTER_ID, caster.getId());
@@ -177,6 +189,7 @@ public abstract class ChargeableSpellEntity extends Entity {
 	protected void defineSynchedData() {
 		entityData.define(CASTER_ID, -1);
 		entityData.define(SPELL_RECIPE, new CompoundTag());
+		entityData.define(LIFETIME, 0f);
 	}
 
 	public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {

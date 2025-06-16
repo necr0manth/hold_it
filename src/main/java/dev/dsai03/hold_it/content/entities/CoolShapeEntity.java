@@ -1,7 +1,6 @@
 package dev.dsai03.hold_it.content.entities;
 
 import com.mna.api.affinity.Affinity;
-import com.mna.api.particles.ParticleInit;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
@@ -38,36 +37,36 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 		return 10;
 	}
 
-	public static int chargeTime() {
-		return 40;
+	public static float chargeTime() {
+		return 2;
 	}
 
-	public static int maxChargeTime() {
-		return 100;
+	public static float maxChargeTime() {
+		return 10;
 	}
 
 	@Override
 	protected boolean isCharged() {
-		return tickCount > chargeTime();
+		return getLifetime() > chargeTime();
 	}
 
 	@Override
 	protected void chargeTick() {
 		if (level().isClientSide)
 			clientTick();
-		System.out.println("Charging: " + tickCount);
+		System.out.println("Charging: " + getLifetime());
 	}
 
 	@Override
 	protected void overChargeTick() {
 		if (level().isClientSide)
 			clientTick();
-		System.out.println("Overcharging: " + tickCount);
+		System.out.println("Overcharging: " + getLifetime());
 	}
 
 	@OnlyIn(Dist.CLIENT)
 	private void clientTick() {
-		var r = Math.min((float) tickCount / chargeTime(), 1) * radius();
+		var r = Math.min(getLifetime() / chargeTime(), 1) * radius();
 		int n = Mth.floor(r * r * r * 0.2);
 		var affinities = getSpell().getAffinity().keySet().toArray(Affinity[]::new);
 		for (int i = 0; i < n; i++) {
@@ -105,11 +104,11 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 								var v22 = aabb.max(axes[1]);
 								h = h.add((axes[0] == Direction.Axis.X ? new Vec3(1, 0, 0) : axes[0] == Direction.Axis.Y ? new Vec3(0, 1, 0) : new Vec3(0, 0, 1)).scale(v11 + random.nextDouble() * (v12 - v11)));
 								h = h.add((axes[1] == Direction.Axis.X ? new Vec3(1, 0, 0) : axes[1] == Direction.Axis.Y ? new Vec3(0, 1, 0) : new Vec3(0, 0, 1)).scale(v21 + random.nextDouble() * (v22 - v21)));
-								var p = new Vec3(pos.getX(), pos.getY(), pos.getZ()).add(h.add(-0.5,-0.5,-0.5).scale(1.1).add(0.5,0.5,0.5));
-								var t = h.add(-0.5,-0.5,-0.5).scale(1.1).add(0.5,0.5,0.5);
-								if ((Math.abs(t.x-0.5) > 0.5 || Math.abs(t.y-0.5) > 0.5 || Math.abs(t.z-0.5) > 0.5) && !level().getBlockState(pos.relative(Direction.getNearest(t.x-0.5, t.y-0.5, t.z-0.5))).isAir())
+								var p = new Vec3(pos.getX(), pos.getY(), pos.getZ()).add(h.add(-0.5, -0.5, -0.5).scale(1.1).add(0.5, 0.5, 0.5));
+								var t = h.add(-0.5, -0.5, -0.5).scale(1.1).add(0.5, 0.5, 0.5);
+								if ((Math.abs(t.x - 0.5) > 0.5 || Math.abs(t.y - 0.5) > 0.5 || Math.abs(t.z - 0.5) > 0.5) && !level().getBlockState(pos.relative(Direction.getNearest(t.x - 0.5, t.y - 0.5, t.z - 0.5))).isAir())
 									continue;
-								if (aabb.contains( h.add(-0.5,-0.5,-0.5).scale(1.1).add(0.5,0.5,0.5)))
+								if (aabb.contains(h.add(-0.5, -0.5, -0.5).scale(1.1).add(0.5, 0.5, 0.5)))
 									continue;
 								level().addParticle(getSpell().colorParticle(ParticleUtils.getParticleType(affinities[random.nextInt(affinities.length)]), getCaster()), p.x, p.y, p.z, 0, 0, 0);
 							}
@@ -124,7 +123,7 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 
 	@Override
 	protected boolean isOverCharged() {
-		return tickCount >= maxChargeTime();
+		return getLifetime() >= maxChargeTime();
 	}
 
 	@Override

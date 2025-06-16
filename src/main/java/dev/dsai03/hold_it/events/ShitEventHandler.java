@@ -9,8 +9,9 @@ public class ShitEventHandler {
 
 	@SubscribeEvent
 	public static void shit(TickEvent.ServerTickEvent event) {
+		//раскомментируйте это, если хотите потестить что-то на очень лагучем сервере
 //		int a = 0;
-//		for(int i = 0;i<1000000000;i++){
+//		for(int i = 0;i<300000000;i++){
 //			a+=i;
 //		}
 	}
