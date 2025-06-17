@@ -15,8 +15,14 @@ public class SpellSevenShape extends BaseChargeableSpellShape{
     }
 
     @Override
-    public Entity createEntity(SpellSource source, Level level, ISpellDefinition definition) {
-        return new SpellSevenShapeEntity(source.getCaster(), level, definition);
+    public Entity createEntity(SpellSource source, Level level, ISpellDefinition recipe) {
+        return new SpellSevenShapeEntity(source.getCaster(), level, recipe);
+    }
+
+
+    @Override
+    public int baselineCooldown() {
+        return 80;
     }
 
     @Override

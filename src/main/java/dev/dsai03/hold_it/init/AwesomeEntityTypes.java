@@ -19,7 +19,6 @@ public interface AwesomeEntityTypes {
 	RegistryObject<EntityType<CoolShapeEntity>> COOL_SHAPE = register("cool_shape", () -> EntityType.Builder.of(CoolShapeEntity::new, MobCategory.MISC));
 	RegistryObject<EntityType<AwesomeSpellShapeEntity>> AWESOME_SHAPE = register("awesome_shape", () -> EntityType.Builder.of(AwesomeSpellShapeEntity::new, MobCategory.MISC));
 	RegistryObject<EntityType<BallEntity>> BALL_ENTITY_TYPE = register("ball", () -> EntityType.Builder.of(BallEntity::new, MobCategory.MISC));
-
 	RegistryObject<EntityType<SpellSevenShapeEntity>> SEVEN_SHAPE = register("seven_shape", () -> EntityType.Builder.of(SpellSevenShapeEntity::new, MobCategory.MISC));
 
 	static <T extends Entity> RegistryObject<EntityType<T>> register(String name, Supplier<EntityType.Builder<T>> builderSupplier) {
