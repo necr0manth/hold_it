@@ -22,11 +22,11 @@ import java.util.Random;
 
 public class SpellSevenShapeEntity extends ChargeableSpellEntity{
     Random random = new Random();
-    public SpellSevenShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
+    public SpellSevenShapeEntity(EntityType<? extends SpellSevenShapeEntity> entityType, Level world) {
         super(entityType, world);
     }
 
-    public SpellSevenShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, LivingEntity caster, ISpellDefinition spell, Level world) {
+    public SpellSevenShapeEntity(EntityType<? extends SpellSevenShapeEntity> entityType, LivingEntity caster, ISpellDefinition spell, Level world) {
         super(entityType, caster, spell, world);
     }
 
