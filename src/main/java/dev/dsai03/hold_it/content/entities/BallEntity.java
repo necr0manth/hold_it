@@ -101,16 +101,13 @@ public class BallEntity extends ThrowableProjectile {
                     var caster = getCaster();
                     if (caster == null)
                         return null;
-                    var partialTick = Minecraft.getInstance().getDeltaFrameTime();
+                    var partialTick = Minecraft.getInstance().getFrameTime();
                     var lookAngle = caster.getViewVector(partialTick);
-                    var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo+caster.getEyeHeight(), caster.getY()), Mth.lerp(partialTick, caster.zo, caster.getZ()));
-//                    pos=Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+                    var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ()));
                     return getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD).pos();
                 }
                 return new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getDeltaFrameTime());
             }));
-//            ParticleUtils.addParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()), position().add(new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d) * entityData.get(POWER) * 0.5f)), Vec3.ZERO, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> {
-//            }, ParticleUtils.EMPTY_TICKER));
         }
     }
 
@@ -134,6 +131,7 @@ public class BallEntity extends ThrowableProjectile {
         this.entityData.define(POWER, 0.0f);
         this.entityData.define(SPELL_RECIPE, new CompoundTag());
         this.entityData.define(ID, -1);
+        this.entityData.define(THROWN, false);
     }
 
 
