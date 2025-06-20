@@ -6,6 +6,7 @@ import com.mna.api.particles.ParticleInit;
 import dev.dsai03.hold_it.mixins.client.ParticleAccessor;
 import dev.dsai03.hold_it.mixins.client.ParticleEngineAccessor;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.core.particles.ParticleOptions;
@@ -59,8 +60,7 @@ public class ParticleUtils {
     }
 
     public static void addParticle(ParticleOptions particleOptions, Vec3 pos, Vec3 velocity, Function<Particle, Particle> function) {
-        var particleEngine = Minecraft.getInstance().particleEngine;
-        particleEngine.add(function.apply(((ParticleProvider<ParticleOptions>) ((ParticleEngineAccessor) particleEngine).getProviders().get(BuiltInRegistries.PARTICLE_TYPE.getKey(particleOptions.getType()))).createParticle(particleOptions, Minecraft.getInstance().level, pos.x, pos.y, pos.z, velocity.x, velocity.y, velocity.z)));
+        Minecraft.getInstance().particleEngine.add(function.apply(createParticle(particleOptions, Minecraft.getInstance().level, pos, velocity)));
     }
 
     @SubscribeEvent
@@ -94,6 +94,11 @@ public class ParticleUtils {
         });
     }
 
+    public static Particle createParticle(ParticleOptions particleOptions, ClientLevel level, Vec3 pos, Vec3 velocity) {
+        var particleEngine = Minecraft.getInstance().particleEngine;
+        return ((ParticleProvider<ParticleOptions>) ((ParticleEngineAccessor) particleEngine).getProviders().get(BuiltInRegistries.PARTICLE_TYPE.getKey(particleOptions.getType()))).createParticle(particleOptions, level, pos.x, pos.y, pos.z, velocity.x, velocity.y, velocity.z);
+    }
+
     public static class ParticleAccess {
         public final ParticleAccessor accessor;
         public final Particle particle;
@@ -120,6 +125,26 @@ public class ParticleUtils {
         public void setPos(Vec3 pos) {
             particle.setPos(pos.x, pos.y, pos.z);
         }
+
+        public Vec3 getPosRaw() {
+            return new Vec3(accessor.getX(), accessor.getY(), accessor.getZ());
+        }
+
+        public Vec3 getPosO() {
+            return new Vec3(accessor.getXo(), accessor.getYo(), accessor.getZo());
+        }
+
+        public void setPosO(Vec3 pos) {
+            accessor.setXo(pos.x);
+            accessor.setYo(pos.y);
+            accessor.setZo(pos.z);
+        }
+
+        public void setPosRaw(Vec3 pos) {
+            accessor.setX(pos.x);
+            accessor.setY(pos.y);
+            accessor.setZ(pos.z);
+        }
     }
 
     public static final Consumer<ParticleAccess> EMPTY_TICKER = p -> {
@@ -129,10 +154,13 @@ public class ParticleUtils {
         Vec3[] pos = new Vec3[1];
         return p -> {
             other.accept(p);
+            var pos1 = relative.get();
             if (pos[0] == null)
-                pos[0] = relative.get();
-            p.setPos(p.getPos().add(relative.get().subtract(pos[0])));
-            pos[0] = relative.get();
+                pos[0] = pos1;
+            if (pos1 != null) {
+                p.setPos(p.getPos().add(pos1.subtract(pos[0])));
+                pos[0] = pos1;
+            }
         };
     }
 }

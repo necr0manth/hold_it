@@ -22,7 +22,6 @@ import java.util.Random;
 
 public class CoolShapeEntity extends ChargeableSpellEntity {
 	Random random = new Random();
-//	Affinity[] cachedAffinities;
 
 	public CoolShapeEntity(EntityType<? extends CoolShapeEntity> entityType, Level world) {
 		super(entityType, world);

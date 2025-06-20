@@ -70,7 +70,7 @@ public class LazySpellHolder {
             var j = getNormalizedAffinities()[i];
             if (random.nextFloat() < j / s)
                 return Affinity.values()[i];
-            s -= i;
+            s -= j;
         }
         return null;
     }

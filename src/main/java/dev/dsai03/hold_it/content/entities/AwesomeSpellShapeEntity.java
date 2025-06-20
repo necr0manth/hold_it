@@ -11,12 +11,14 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,11 +34,6 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     public AwesomeSpellShapeEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
         super(AwesomeEntityTypes.AWESOME_SHAPE.get(), caster, spell, world);
     }
-
-    public static final int maxUseTime = 10000000;
-    public static final float maxPower = 2;
-    public static final float defaultPower = 0.7f;
-    public static final float distanceToProjectile = 3;
 
     @Override
     protected boolean isCharged() {
@@ -91,58 +88,65 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         commonTick();
     }
 
+    public record BallData(Vec3 pos, float radius) {
+    }
+
+    public int maxBalls() {
+        return 5;
+    }
+
+    public float distanceToProjectiles() {
+        return 3;
+    }
+
+    public float chargedBallPower() {
+        return 0.7f;
+    }
+
+    public float radius() {
+        return 0.8f;
+    }
+
+    public static BallData getBallData(int i, float charge, float ballPower, float radius, float distanceToProjectile, Vec3 casterPosition, Vec3 casterLookAngle, float casterYRot, float time) {
+        int balls = Mth.ceil(charge / ballPower);
+        if (charge <= ballPower)
+            return new BallData(casterPosition.add(casterLookAngle.scale(distanceToProjectile)), Math.min(charge, ballPower));
+        else if (charge < 2 * ballPower) {
+            if (i == 0)
+                return new BallData(getBallData(0, ballPower, ballPower, radius, distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos.lerp(
+                        getBallData(0, 2 * ballPower, ballPower, radius, distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos, (charge % ballPower) / ballPower
+                ), ballPower);
+            else
+                return new BallData(getBallData(1, 2 * ballPower, ballPower, Mth.lerp((charge % ballPower) / ballPower, radius / 2, radius), distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos, charge % ballPower);
+        }
+        if (Math.abs(casterLookAngle.normalize().dot(new Vec3(0, 1, 0)) - 1) < 0.000001f)
+            casterLookAngle = new Vec3(-0.000001 * Math.sin(casterYRot), 1, 0.000001 * Math.cos(casterYRot));
+        Quaternionf r = new Quaternionf().lookAlong((float) casterLookAngle.x, (float) casterLookAngle.y, (float) casterLookAngle.z, 0, 1, 0);
+        var angle = i * 2 * Math.PI / charge * ballPower + 2 * Math.PI * (charge / ballPower / 2) + time;
+        var pos = r.transformInverse(new Vector3d(radius * Math.sin(angle), radius * Math.cos(angle), -distanceToProjectile)).add(casterPosition.x, casterPosition.y, casterPosition.z);
+        return new BallData(new Vec3(pos.get(new Vector3f())), i == balls - 1 ? (Math.abs(charge % ballPower) < 1e-6f ? ballPower : charge % ballPower) : ballPower);
+    }
+
+    public float getCharge() {
+        return Math.min(getLifetime() / chargeTime(), 1) * chargedBallPower() * maxBalls();
+    }
+
     void commonTick() {
         if (level().isClientSide)
             return;
-
-        var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
         var projectiles = getBalls();
-        int maxProj = 5;
-        float speed = 0.25f;
-        float s = Math.min(getLifetime() / chargeTime(), 1) * defaultPower * maxProj;
-        int i = 0;
-        while (s > 0) {
-            float p;
-            if (s >= defaultPower) {
-                p = defaultPower;
-                s -= defaultPower;
-            } else {
-                p = s;
-                s = 0;
-            }
-            BallEntity proj;
-            if (i < projectiles.size())
-                proj = projectiles.get(i);
-            else {
-                proj = new BallEntity(level(), getCaster());
-                proj.setOwner(getCaster());
-                proj.setSpell(getSpell());
-                level().addFreshEntity(proj);
-                projectiles.add(proj);
-            }
-            proj.power = p;
-            i++;
+        int n = Mth.ceil(getCharge() / chargedBallPower()) - projectiles.size();
+        for (int i = 0; i < n; i++) {
+            var proj = new BallEntity(level(), this, projectiles.size());
+            proj.setSpell(getSpell());
+            level().addFreshEntity(proj);
+            projectiles.add(proj);
         }
-        if (projectiles.size() == 1) {
-            projectiles.get(0).targetPosition = projectiles.get(0).position().add(centerPos.subtract(projectiles.get(0).getBoundingBox().getCenter()));
-            projectiles.get(0).setDeltaMovement(projectiles.get(0).targetPosition.subtract(projectiles.get(0).position()));
-        } else {
-            var radius = 0.7;
-            Quaternionf r;
-            if (!getCaster().getLookAngle().normalize().equals(new Vec3(0, 0.8, 0)))
-                r = new Quaternionf().lookAlong((float) getCaster().getLookAngle().x, (float) getCaster().getLookAngle().y, (float) getCaster().getLookAngle().z, 0, 1, 0);
-            else
-                r = new Quaternionf();
-            for (int j = 0; j < projectiles.size(); j++) {
-                var angle = j * 2 * Math.PI / projectiles.size() + getLifetime();
-                var pos = r.transformInverse(new Vector3d(radius * Math.sin(angle), radius * Math.cos(angle), -distanceToProjectile)).add(getCaster().getX(), getCaster().getEyeY(), getCaster().getZ());
-                projectiles.get(j).targetPosition = new Vec3(pos.x, pos.y + 1, pos.z);
-                projectiles.get(j).setDeltaMovement(projectiles.get(j).targetPosition.subtract(projectiles.get(j).position()));
-            }
-        }
-
         saveBalls(projectiles);
+    }
 
+    public BallData getBallData(int ball, Vec3 castPosition, Vec3 castVector, float castYRot) {
+        return getBallData(ball, getCharge(), chargedBallPower(), radius(), distanceToProjectiles(), castPosition, castVector, castYRot, getLifetime());
     }
 
     @Override
