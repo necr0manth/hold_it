@@ -23,158 +23,158 @@ import java.util.Collection;
 import java.util.List;
 
 public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
-	public static final EntityDataAccessor<CompoundTag> BALLS = SynchedEntityData.defineId(AwesomeSpellShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    public static final EntityDataAccessor<CompoundTag> BALLS = SynchedEntityData.defineId(AwesomeSpellShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
-	public AwesomeSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
-		super(entityType, world);
-	}
+    public AwesomeSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
+        super(entityType, world);
+    }
 
-	public AwesomeSpellShapeEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
-		super(AwesomeEntityTypes.AWESOME_SHAPE.get(), caster, spell, world);
-	}
+    public AwesomeSpellShapeEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
+        super(AwesomeEntityTypes.AWESOME_SHAPE.get(), caster, spell, world);
+    }
 
-	public static final int maxUseTime = 10000000;
-	public static final float maxPower = 2;
-	public static final float defaultPower = 0.7f;
-	public static final float distanceToProjectile = 3;
+    public static final int maxUseTime = 10000000;
+    public static final float maxPower = 2;
+    public static final float defaultPower = 0.7f;
+    public static final float distanceToProjectile = 3;
 
-	@Override
-	protected boolean isCharged() {
-		return getLifetime() > 10;
-	}
+    @Override
+    protected boolean isCharged() {
+        return getLifetime() > 10;
+    }
 
-	@Override
-	protected void defineSynchedData() {
-		super.defineSynchedData();
-		entityData.define(BALLS, new CompoundTag());
-	}
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        entityData.define(BALLS, new CompoundTag());
+    }
 
-	public List<BallEntity> getBalls() {
-		var tag = entityData.get(BALLS);
+    public List<BallEntity> getBalls() {
+        var tag = entityData.get(BALLS);
 
-		var ans = new ArrayList<BallEntity>();
-		if (!tag.contains("balls"))
-			return ans;
-		for (var i : tag.getList("balls", Tag.TAG_INT_ARRAY)) {
-			ans.add((BallEntity) ((ServerLevel) level()).getEntity(NbtUtils.loadUUID(i)));
-		}
-		return ans;
-	}
+        var ans = new ArrayList<BallEntity>();
+        if (!tag.contains("balls"))
+            return ans;
+        for (var i : tag.getList("balls", Tag.TAG_INT_ARRAY)) {
+            ans.add((BallEntity) ((ServerLevel) level()).getEntity(NbtUtils.loadUUID(i)));
+        }
+        return ans;
+    }
 
-	public void saveBalls(List<BallEntity> balls) {
-		ListTag list = new ListTag();
-		for (var proj : balls) {
-			list.add(NbtUtils.createUUID(proj.getUUID()));
-		}
-		var tag = new CompoundTag();
-		tag.put("balls", list);
-		entityData.set(BALLS, tag);
-	}
+    public void saveBalls(List<BallEntity> balls) {
+        ListTag list = new ListTag();
+        for (var proj : balls) {
+            list.add(NbtUtils.createUUID(proj.getUUID()));
+        }
+        var tag = new CompoundTag();
+        tag.put("balls", list);
+        entityData.set(BALLS, tag);
+    }
 
-	public static float chargeTime() {
-		return 10;
-	}
+    public static float chargeTime() {
+        return 10;
+    }
 
-	protected void addAdditionalSaveData(CompoundTag compound) {
-		super.addAdditionalSaveData(compound);
-		compound.put("balls", entityData.get(BALLS));
-	}
+    protected void addAdditionalSaveData(CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        compound.put("balls", entityData.get(BALLS));
+    }
 
-	protected void readAdditionalSaveData(CompoundTag compound) {
-		super.readAdditionalSaveData(compound);
-		if (compound.contains("balls"))
-			entityData.set(BALLS, compound.getCompound("balls"));
-	}
+    protected void readAdditionalSaveData(CompoundTag compound) {
+        super.readAdditionalSaveData(compound);
+        if (compound.contains("balls"))
+            entityData.set(BALLS, compound.getCompound("balls"));
+    }
 
-	@Override
-	protected void chargeTick() {
-		commonTick();
-	}
+    @Override
+    protected void chargeTick() {
+        commonTick();
+    }
 
-	void commonTick() {
-		if (level().isClientSide)
-			return;
+    void commonTick() {
+        if (level().isClientSide)
+            return;
 
-		var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
-		var projectiles = getBalls();
-		int maxProj = 5;
-		float speed = 0.25f;
-		float s = Math.min(getLifetime() / chargeTime(), 1)*defaultPower*maxProj;
-		int i = 0;
-		while (s > 0) {
-			float p;
-			if (s >= defaultPower) {
-				p = defaultPower;
-				s -= defaultPower;
-			} else {
-				p = s;
-				s = 0;
-			}
-			BallEntity proj;
-			if (i < projectiles.size())
-				proj = projectiles.get(i);
-			else {
-				proj = new BallEntity(level(), getCaster());
-				level().addFreshEntity(proj);
-				projectiles.add(proj);
-			}
-			proj.power = p;
-			i++;
-		}
-		if (projectiles.size() == 1) {
-			projectiles.get(0).targetPosition = projectiles.get(0).position().add(centerPos.subtract(projectiles.get(0).getBoundingBox().getCenter()));
-			projectiles.get(0).setDeltaMovement(projectiles.get(0).targetPosition.subtract(projectiles.get(0).position()));
-		} else {
-			var radius = 0.7;
-			Quaternionf r;
-			if (!getCaster().getLookAngle().normalize().equals(new Vec3(0, 0.8, 0)))
-				r = new Quaternionf().lookAlong((float) getCaster().getLookAngle().x, (float) getCaster().getLookAngle().y, (float) getCaster().getLookAngle().z, 0, 1, 0);
-			else
-				r = new Quaternionf();
-			for (int j = 0; j < projectiles.size(); j++) {
-				var angle = j * 2 * Math.PI / projectiles.size() + getLifetime();
-				var pos = r.transformInverse(new Vector3d(radius * Math.sin(angle), radius * Math.cos(angle), -distanceToProjectile)).add(getCaster().getX(), getCaster().getEyeY(), getCaster().getZ());
-				projectiles.get(j).targetPosition = new Vec3(pos.x, pos.y + 1, pos.z);
-				projectiles.get(j).setDeltaMovement(projectiles.get(j).targetPosition.subtract(projectiles.get(j).position()));
-			}
-		}
+        var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
+        var projectiles = getBalls();
+        int maxProj = 5;
+        float speed = 0.25f;
+        float s = Math.min(getLifetime() / chargeTime(), 1) * defaultPower * maxProj;
+        int i = 0;
+        while (s > 0) {
+            float p;
+            if (s >= defaultPower) {
+                p = defaultPower;
+                s -= defaultPower;
+            } else {
+                p = s;
+                s = 0;
+            }
+            BallEntity proj;
+            if (i < projectiles.size())
+                proj = projectiles.get(i);
+            else {
+                proj = new BallEntity(level(), getCaster());
+                proj.setOwner(getCaster());
+                proj.setSpell(getSpell());
+                level().addFreshEntity(proj);
+                projectiles.add(proj);
+            }
+            proj.power = p;
+            i++;
+        }
+        if (projectiles.size() == 1) {
+            projectiles.get(0).targetPosition = projectiles.get(0).position().add(centerPos.subtract(projectiles.get(0).getBoundingBox().getCenter()));
+            projectiles.get(0).setDeltaMovement(projectiles.get(0).targetPosition.subtract(projectiles.get(0).position()));
+        } else {
+            var radius = 0.7;
+            Quaternionf r;
+            if (!getCaster().getLookAngle().normalize().equals(new Vec3(0, 0.8, 0)))
+                r = new Quaternionf().lookAlong((float) getCaster().getLookAngle().x, (float) getCaster().getLookAngle().y, (float) getCaster().getLookAngle().z, 0, 1, 0);
+            else
+                r = new Quaternionf();
+            for (int j = 0; j < projectiles.size(); j++) {
+                var angle = j * 2 * Math.PI / projectiles.size() + getLifetime();
+                var pos = r.transformInverse(new Vector3d(radius * Math.sin(angle), radius * Math.cos(angle), -distanceToProjectile)).add(getCaster().getX(), getCaster().getEyeY(), getCaster().getZ());
+                projectiles.get(j).targetPosition = new Vec3(pos.x, pos.y + 1, pos.z);
+                projectiles.get(j).setDeltaMovement(projectiles.get(j).targetPosition.subtract(projectiles.get(j).position()));
+            }
+        }
 
-		saveBalls(projectiles);
+        saveBalls(projectiles);
 
-	}
+    }
 
-	@Override
-	protected void overChargeTick() {
-		commonTick();
-	}
+    @Override
+    protected void overChargeTick() {
+        commonTick();
+    }
 
-	@Override
-	protected boolean isOverCharged() {
-		return getLifetime() > 20;
-	}
+    @Override
+    protected boolean isOverCharged() {
+        return getLifetime() > 20;
+    }
 
-	@Override
-	protected void onCharged() {
+    @Override
+    protected void onCharged() {
 
-	}
+    }
 
-	@Override
-	protected Collection<SpellTarget> target() {
-		return List.of();
-	}
+    @Override
+    protected Collection<SpellTarget> target() {
+        return List.of();
+    }
 
-	public void applySpell() {
-		if(level().isClientSide)
-			return;
-		for (var ball : getBalls()) {
-			ball.shoot(getCaster().getLookAngle());
-			ball.setOwner(getCaster());
-			ball.setSpell(getSpell());
-		}
-	}
+    public void applySpell() {
+        if (level().isClientSide)
+            return;
+        for (var ball : getBalls()) {
+            ball.shoot(getCaster().getLookAngle());
+        }
+    }
 
-	@Override
-	protected void onInterrupt() {
-		applySpell();
-	}
+    @Override
+    protected void onInterrupt() {
+        applySpell();
+    }
 }

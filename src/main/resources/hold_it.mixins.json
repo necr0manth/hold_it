@@ -8,6 +8,8 @@
     "SpellRecipeMixin"
   ],
   "client": [
+    "client.ParticleAccessor",
+    "client.ParticleEngineAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
