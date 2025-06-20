@@ -74,7 +74,7 @@ public class BallEntity extends ThrowableProjectile {
     public void tick() {
         var caster = getCaster();
         if (caster != null && getOwner() != null) {
-            var ballData = getOwner().getBallData(entityData.get(ID), caster.getEyePosition(), caster.getLookAngle(), caster.yHeadRot* Mth.DEG_TO_RAD);
+            var ballData = getOwner().getBallData(entityData.get(ID), caster.getEyePosition(), caster.getLookAngle(), caster.yHeadRot * Mth.DEG_TO_RAD);
             setPower(ballData.radius());
             setPos(ballData.pos());
         }
@@ -103,8 +103,9 @@ public class BallEntity extends ThrowableProjectile {
                         return null;
                     var partialTick = Minecraft.getInstance().getDeltaFrameTime();
                     var lookAngle = caster.getViewVector(partialTick);
-                    var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()), Mth.lerp(partialTick, caster.zo, caster.getZ()));
-                    return getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot*Mth.DEG_TO_RAD).pos();
+                    var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo+caster.getEyeHeight(), caster.getY()), Mth.lerp(partialTick, caster.zo, caster.getZ()));
+//                    pos=Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+                    return getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD).pos();
                 }
                 return new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getDeltaFrameTime());
             }));
