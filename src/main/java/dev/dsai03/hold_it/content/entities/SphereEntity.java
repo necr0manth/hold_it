@@ -35,10 +35,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class BallEntity extends ThrowableProjectile {
-    private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.BOOLEAN);
-    public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.COMPOUND_TAG);
+public class SphereEntity extends ThrowableProjectile {
+    private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.COMPOUND_TAG);
     public Vec3 targetPosition;
     public float power = 1;
     public final LazySpellHolder spell = new LazySpellHolder(() -> {
@@ -48,13 +47,13 @@ public class BallEntity extends ThrowableProjectile {
         return SpellRecipe.fromNBT(s);
     });
 
-    public BallEntity(EntityType<? extends BallEntity> pEntityType, Level pLevel) {
+    public SphereEntity(EntityType<? extends SphereEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         setNoGravity(true);
     }
 
-    public BallEntity(Level level, LivingEntity owner) {
-        this(AwesomeEntityTypes.BALL_ENTITY_TYPE.get(), level);
+    public SphereEntity(Level level, LivingEntity owner) {
+        this(AwesomeEntityTypes.SPHERE_ENTITY_TYPE.get(), level);
         setOwner(owner);
         setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
     }
@@ -121,7 +120,6 @@ public class BallEntity extends ThrowableProjectile {
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putFloat("power", this.entityData.get(POWER));
-        compound.putBoolean("thrown", this.entityData.get(THROWN));
         compound.put("spell", entityData.get(SPELL_RECIPE));
     }
 
@@ -129,7 +127,6 @@ public class BallEntity extends ThrowableProjectile {
     protected void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
         setPower(pCompound.getFloat("power"));
-        entityData.set(THROWN, pCompound.getBoolean("thrown"));
         if (pCompound.contains("spell")) {
             entityData.set(SPELL_RECIPE, (CompoundTag) pCompound.get("spell"));
         }
@@ -163,9 +160,6 @@ public class BallEntity extends ThrowableProjectile {
             discard();
             return;
         }
-        if (!entityData.get(THROWN)) {
-            return;
-        }
         if (level().isClientSide)
             return;
         var targets = new ArrayList<SpellTarget>();
@@ -189,11 +183,5 @@ public class BallEntity extends ThrowableProjectile {
             }
         }
         discard();
-    }
-
-    public void shoot(Vec3 dir) {
-        targetPosition = null;
-        entityData.set(THROWN, true);
-        shoot(dir.x, dir.y, dir.z, (float) (2 / (getPower() + 0.5)), 0);
     }
 }
