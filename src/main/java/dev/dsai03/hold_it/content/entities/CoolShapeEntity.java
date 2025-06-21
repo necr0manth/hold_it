@@ -54,14 +54,12 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
     protected void chargeTick() {
         if (level().isClientSide)
             clientTick();
-        System.out.println("Charging: " + getLifetime());
     }
 
     @Override
     protected void overChargeTick() {
         if (level().isClientSide)
             clientTick();
-        System.out.println("Overcharging: " + getLifetime());
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -128,12 +126,11 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void onInterrupt() {
-        System.out.println("Interrupted");
     }
 
     @Override
     protected void onCharged() {
-        System.out.println("Charged!");
+
     }
 
     @Override

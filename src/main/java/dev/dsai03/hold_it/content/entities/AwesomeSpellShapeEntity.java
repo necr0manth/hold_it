@@ -146,7 +146,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     public BallData getBallData(int ball, Vec3 castPosition, Vec3 castVector, float castYRot) {
-        return getBallData(ball, getCharge(), chargedBallPower(), radius(), distanceToProjectiles(), castPosition, castVector, castYRot, getLifetime());
+        return getBallData(ball, getCharge(), chargedBallPower(), radius(), distanceToProjectiles(), castPosition.add(0, Math.max(0, -castVector.normalize().y * 0.5f+1), 0), castVector, castYRot, getLifetime());
     }
 
     @Override

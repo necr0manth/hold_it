@@ -59,7 +59,7 @@ public abstract class ChargeableSpellEntity extends Entity {
 
     private void stopCast() {
         if (getCaster() instanceof Player player)
-            player.stopUsingItem();
+            player.releaseUsingItem();
         discard();
     }
 
@@ -100,8 +100,9 @@ public abstract class ChargeableSpellEntity extends Entity {
         } else {
             if (isCharged())
                 applySpell();
-            else
+            else {
                 onInterrupt();
+            }
             stopCast();
         }
     }

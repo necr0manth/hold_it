@@ -100,6 +100,8 @@ public class BallEntity extends ThrowableProjectile {
         if (affinity == null) return;
         for (int i = 0; i < 10; i++) {
             OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()), Minecraft.getInstance().level, new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d) * entityData.get(POWER) * 0.5f), Vec3.ZERO)).offset(() -> {
+                if(isRemoved())
+                    return null;
                 if (getOwner() != null) {
                     var caster = getCaster();
                     if (caster == null)
