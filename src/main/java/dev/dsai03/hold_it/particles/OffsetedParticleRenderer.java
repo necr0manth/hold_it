@@ -44,6 +44,8 @@ public class OffsetedParticleRenderer implements IParticleRenderer<OffsetedParti
                         var p = particle.particleAccess.getPosRaw();
                         var po = particle.particleAccess.getPosO();
                         var offset = particle.getOffset();
+                        if (offset == null)
+                            continue;
                         particle.particleAccess.setPosRaw(p.add(offset));
                         particle.particleAccess.setPosO(po.add(offset));
                         particle.particle.render(bufferbuilder, Minecraft.getInstance().gameRenderer.getMainCamera(), pPartialTicks);

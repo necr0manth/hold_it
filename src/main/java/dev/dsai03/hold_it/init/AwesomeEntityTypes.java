@@ -15,7 +15,7 @@ public interface AwesomeEntityTypes {
 	DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MyAwesomeMnaAddon.MODID);
 	RegistryObject<EntityType<CoolShapeEntity>> COOL_SHAPE = register("cool_shape", () -> EntityType.Builder.of(CoolShapeEntity::new, MobCategory.MISC));
 	RegistryObject<EntityType<AwesomeSpellShapeEntity>> AWESOME_SHAPE = register("awesome_shape", () -> EntityType.Builder.of(AwesomeSpellShapeEntity::new, MobCategory.MISC));
-	RegistryObject<EntityType<BallEntity>> BALL_ENTITY_TYPE = register("ball", () -> EntityType.Builder.of(BallEntity::new, MobCategory.MISC));
+	RegistryObject<EntityType<BallEntity>> BALL_ENTITY_TYPE = register("ball", () -> EntityType.Builder.<BallEntity>of(BallEntity::new, MobCategory.MISC).fireImmune());
 	RegistryObject<EntityType<SpellSevenShapeEntity>> SEVEN_SHAPE = register("seven_shape", () -> EntityType.Builder.of(SpellSevenShapeEntity::new, MobCategory.MISC));
 	RegistryObject<EntityType<SphereEntity>> SPHERE_ENTITY_TYPE = register("sphere", () -> EntityType.Builder.of(SphereEntity::new, MobCategory.MISC));
 

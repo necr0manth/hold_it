@@ -12,6 +12,7 @@ import com.mna.spells.crafting.SpellRecipe;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.particles.OffsetedParticle;
 import dev.dsai03.hold_it.particles.OffsetedParticleEngine;
+import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.LazySpellHolder;
 import dev.dsai03.hold_it.util.ParticleUtils;
 import net.minecraft.client.Minecraft;
@@ -40,7 +41,9 @@ public class BallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.COMPOUND_TAG);
     public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
-    LivingEntity cachedCaster;
+    public static final EntityDataAccessor<Integer> CASTER_ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<String> CASTER_DIMENSION = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.STRING);
+    private Entity2EntityReference<LivingEntity> caster;
     public float lastPower = 1;
     public final LazySpellHolder spell = new LazySpellHolder(() -> {
         var s = entityData.get(SPELL_RECIPE);
@@ -52,23 +55,19 @@ public class BallEntity extends ThrowableProjectile {
     public BallEntity(EntityType<? extends BallEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         setNoGravity(true);
+        setInvulnerable(true);
     }
 
-    public BallEntity(Level level, Entity owner, int id) {
+    public BallEntity(Level level, AwesomeSpellShapeEntity owner, int id) {
         this(AwesomeEntityTypes.BALL_ENTITY_TYPE.get(), level);
         setOwner(owner);
+        caster.set(owner.getCaster());
         setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
         entityData.set(ID, id);
     }
 
     public LivingEntity getCaster() {
-        if (cachedCaster == null) {
-            var owner = getOwner();
-            if (owner == null)
-                return null;
-            cachedCaster = owner.getCaster();
-        }
-        return cachedCaster;
+        return caster.get();
     }
 
     public void tick() {
@@ -76,7 +75,11 @@ public class BallEntity extends ThrowableProjectile {
         if (caster != null && getOwner() != null) {
             var ballData = getOwner().getBallData(entityData.get(ID), caster.getEyePosition(), caster.getLookAngle(), caster.yHeadRot * Mth.DEG_TO_RAD);
             setPower(ballData.radius());
-            setPos(ballData.pos());
+            setPos(ballData.pos().subtract(0, ballData.radius() / 2, 0));
+        }
+        if (caster != null && getOwner() == null && getDeltaMovement().length() < 0.02) {
+            entityData.set(THROWN, true);
+            onHit(position());
         }
         super.tick();
         if (entityData.get(POWER) != lastPower && !this.level().isClientSide) {
@@ -106,7 +109,7 @@ public class BallEntity extends ThrowableProjectile {
                     var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ()));
                     return getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD).pos();
                 }
-                return new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getDeltaFrameTime());
+                return new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0);
             }));
         }
     }
@@ -132,6 +135,8 @@ public class BallEntity extends ThrowableProjectile {
         this.entityData.define(SPELL_RECIPE, new CompoundTag());
         this.entityData.define(ID, -1);
         this.entityData.define(THROWN, false);
+        caster = new Entity2EntityReference<>(CASTER_ID, CASTER_DIMENSION, "caster", this);
+        caster.define();
     }
 
 
@@ -156,7 +161,8 @@ public class BallEntity extends ThrowableProjectile {
         compound.putFloat("power", this.entityData.get(POWER));
         compound.putBoolean("thrown", this.entityData.get(THROWN));
         compound.put("spell", entityData.get(SPELL_RECIPE));
-        compound.putInt("id", entityData.get(ID));
+        compound.putInt("index", entityData.get(ID));
+        caster.save(compound);
     }
 
     @Override
@@ -165,16 +171,18 @@ public class BallEntity extends ThrowableProjectile {
         entityData.set(POWER, pCompound.getFloat("power"));
         entityData.set(THROWN, pCompound.getBoolean("thrown"));
         entityData.set(SPELL_RECIPE, (CompoundTag) pCompound.get("spell"));
-        entityData.set(ID, pCompound.getInt("id"));
+        caster.load(pCompound);
     }
 
     @Override
     protected void onHitBlock(BlockHitResult hitResult) {
-        onHit();
+        onHit(hitResult.getLocation().add(hitResult.getBlockPos().getCenter().subtract(hitResult.getLocation()).normalize().scale(0.1)));
     }
 
     @Override
     protected void onHitEntity(EntityHitResult hitResult) {
+        if (level().isClientSide)
+            return;
         if (getCaster() == null) {
             discard();
             return;
@@ -182,8 +190,6 @@ public class BallEntity extends ThrowableProjectile {
         if (!entityData.get(THROWN)) {
             return;
         }
-        if (level().isClientSide)
-            return;
         SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
         SpellContext context = new SpellContext(this.level(), spell.getSpell());
         HashMap<SpellEffect, ComponentApplicationResult> results = SpellCaster.ApplyComponents(spell.getSpell(), source, new SpellTarget(hitResult.getEntity()), context);
@@ -194,10 +200,12 @@ public class BallEntity extends ThrowableProjectile {
                 }
             });
         }
-        onHit();
+        onHit(hitResult.getLocation());
     }
 
-    private void onHit() {
+    private void onHit(Vec3 location) {
+        if (level().isClientSide)
+            return;
         if (getCaster() == null) {
             discard();
             return;
@@ -205,13 +213,13 @@ public class BallEntity extends ThrowableProjectile {
         if (!entityData.get(THROWN)) {
             return;
         }
-        if (level().isClientSide)
-            return;
         var targets = new ArrayList<SpellTarget>();
-        for (int i = -2; i <= 2; i++) {
-            for (int j = -2; j <= 2; j++) {
-                for (int k = -2; k <= 2; k++) {
-                    targets.add(new SpellTarget(BlockPos.containing(position().add(i, j, k)), null));
+        var power = entityData.get(POWER);
+        for (int i = -Mth.ceil(power); i <= Mth.ceil(power); i++) {
+            for (int j = -Mth.ceil(power); j <= Mth.ceil(power); j++) {
+                for (int k = -Mth.ceil(power); k <= Mth.ceil(power); k++) {
+                    if (new Vec3(i, j, k).length() <= power)
+                        targets.add(new SpellTarget(BlockPos.containing(location.add(i, j, k)), null));
                 }
             }
         }
