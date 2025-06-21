@@ -5,7 +5,7 @@ import com.mna.api.particles.MAParticleType;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
-import dev.dsai03.hold_it.util.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;

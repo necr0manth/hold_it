@@ -1,10 +1,8 @@
 package dev.dsai03.hold_it.content.entities;
 
-import com.mna.api.affinity.Affinity;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
-import dev.dsai03.hold_it.util.ParticleUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;

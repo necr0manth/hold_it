@@ -1,4 +1,4 @@
-package dev.dsai03.hold_it.particles;
+package dev.dsai03.hold_it.content.client.particles;
 
 import java.util.Set;
 
