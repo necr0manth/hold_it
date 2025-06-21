@@ -29,9 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class SpellSevenShapeEntity extends ChargeableSpellEntity{
+public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     public static final EntityDataAccessor<CompoundTag> SPHERE = SynchedEntityData.defineId(SpellSevenShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
     Random random = new Random();
+
     public SpellSevenShapeEntity(EntityType<? extends SpellSevenShapeEntity> entityType, Level world) {
         super(entityType, world);
     }
@@ -39,8 +40,8 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity{
     public SpellSevenShapeEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
         super(AwesomeEntityTypes.SEVEN_SHAPE.get(), caster, spell, world);
     }
-    public static final float defaultPower = 0.7f;
 
+    public static final float defaultPower = 0.7f;
     public static final float distanceToProjectile = 3;
 
     public static float radius() {
@@ -68,31 +69,42 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity{
 
     public List<SphereEntity> getSphere() {
         var tag = entityData.get(SPHERE);
-
         var ans = new ArrayList<SphereEntity>();
-        if (!tag.contains("sphere"))
+        if (!tag.contains("sphere")) {
             return ans;
+        }
+        if (!(level() instanceof ServerLevel serverLevel)) {
+            return ans;
+        }
         for (var i : tag.getList("sphere", Tag.TAG_INT_ARRAY)) {
-            ans.add((SphereEntity) ((ServerLevel) level()).getEntity(NbtUtils.loadUUID(i)));
+            Entity entity = serverLevel.getEntity(NbtUtils.loadUUID(i));
+            if (entity instanceof SphereEntity sphere) {
+                ans.add(sphere);
+            }
+        }
+        if (ans.size() > 1) {
+            ans.subList(1, ans.size()).clear();
         }
         return ans;
     }
 
     public void saveSphere(List<SphereEntity> sphere) {
         ListTag list = new ListTag();
-        for (var proj : sphere) {
-            list.add(NbtUtils.createUUID(proj.getUUID()));
+        if (!sphere.isEmpty()) {
+            list.add(NbtUtils.createUUID(sphere.get(0).getUUID()));
         }
         var tag = new CompoundTag();
         tag.put("sphere", list);
         entityData.set(SPHERE, tag);
     }
 
+    @Override
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.put("sphere", entityData.get(SPHERE));
     }
 
+    @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         if (compound.contains("sphere"))
@@ -100,8 +112,48 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity{
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (level().isClientSide)
+            return;
+
+        if (getCaster() == null) {
+            var projectile = getSphere();
+            if (!projectile.isEmpty()) {
+                projectile.get(0).discard();
+            }
+            this.discard();
+            return;
+        }
+
+        var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
+        var projectile = getSphere();
+        float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
+        SphereEntity proj;
+
+        if (!projectile.isEmpty()) {
+            proj = projectile.get(0);
+            proj.power = power;
+        } else {
+            proj = new SphereEntity(level(), getCaster());
+            proj.setOwner(getCaster());
+            proj.setSpell(getSpell());
+            level().addFreshEntity(proj);
+            projectile = new ArrayList<>();
+            projectile.add(proj);
+        }
+
+        proj.targetPosition = centerPos;
+        proj.setDeltaMovement(proj.targetPosition.subtract(proj.position()));
+
+        saveSphere(projectile);
+    }
+
+    @Override
     protected void chargeTick() {
-        commonTick();
+        if (level().isClientSide) {
+            clientTick();
+        }
     }
 
     @Override
@@ -111,67 +163,13 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity{
         System.out.println("Overcharging: " + getLifetime());
     }
 
-    void commonTick() {
-        if (level().isClientSide)
-            return;
-
-        var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
-        var projectile = getSphere();
-        int maxProj = 5;
-        float speed = 0.25f;
-        float s = Math.min(getLifetime() / chargeTime(), 1) * defaultPower * maxProj;
-        int i = 0;
-        while (s > 0) {
-            float p;
-            if (s >= defaultPower) {
-                p = defaultPower;
-                s -= defaultPower;
-            } else {
-                p = s;
-                s = 0;
-            }
-            SphereEntity proj;
-            if (i < projectile.size()){
-                proj = projectile.get(i);
-                proj.power = p;
-            } else {
-                proj = new SphereEntity(level(), getCaster());
-                proj.setOwner(getCaster());
-                proj.setSpell(getSpell());
-                level().addFreshEntity(proj);
-            }
-            i++;
-        }
-        if (projectile.size() == 1) {
-            projectile.get(0).targetPosition = projectile.get(0).position().add(centerPos.subtract(projectile.get(0).getBoundingBox().getCenter()));
-            projectile.get(0).setDeltaMovement(projectile.get(0).targetPosition.subtract(projectile.get(0).position()));
-        } else {
-            var radius = 0.7;
-            Quaternionf r;
-            if (!getCaster().getLookAngle().normalize().equals(new Vec3(0, 0.8, 0)))
-                r = new Quaternionf().lookAlong((float) getCaster().getLookAngle().x, (float) getCaster().getLookAngle().y, (float) getCaster().getLookAngle().z, 0, 1, 0);
-            else
-                r = new Quaternionf();
-            for (int j = 0; j < projectile.size(); j++) {
-                var angle = j * 2 * Math.PI / projectile.size() + getLifetime();
-                var pos = r.transformInverse(new Vector3d(radius * Math.sin(angle), radius * Math.cos(angle), -distanceToProjectile)).add(getCaster().getX(), getCaster().getEyeY(), getCaster().getZ());
-                projectile.get(j).targetPosition = new Vec3(pos.x, pos.y + 1, pos.z);
-                projectile.get(j).setDeltaMovement(projectile.get(j).targetPosition.subtract(projectile.get(j).position()));
-            }
-        }
-
-        saveSphere(projectile);
-
-    }
-
     @OnlyIn(Dist.CLIENT)
     private void clientTick() {
     }
 
-
     @Override
     protected boolean isOverCharged() {
-        return getLifetime() >= maxChargeTime();
+        return getLifetime() > maxChargeTime();
     }
 
     @Override
@@ -197,8 +195,16 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity{
         }
         return targets;
     }
+
     @Override
     protected void onInterrupt() {
-        System.out.println("Interrupted");
+        System.out.println("Interrupted, level.isClientSide: " + level().isClientSide);
+        if (!level().isClientSide) {
+            var projectile = getSphere();
+            if (!projectile.isEmpty()) {
+                System.out.println("Discarding sphere");
+                projectile.get(0).discard();
+            }
+        }
     }
 }
