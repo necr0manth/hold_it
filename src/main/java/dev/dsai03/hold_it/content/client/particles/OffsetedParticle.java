@@ -1,6 +1,5 @@
-package dev.dsai03.hold_it.particles;
+package dev.dsai03.hold_it.content.client.particles;
 
-import dev.dsai03.hold_it.util.ParticleUtils;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.world.phys.Vec3;
 

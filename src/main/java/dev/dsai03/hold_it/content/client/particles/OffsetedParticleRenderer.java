@@ -1,4 +1,4 @@
-package dev.dsai03.hold_it.particles;
+package dev.dsai03.hold_it.content.client.particles;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;

@@ -10,11 +10,11 @@ import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
-import dev.dsai03.hold_it.particles.OffsetedParticle;
-import dev.dsai03.hold_it.particles.OffsetedParticleEngine;
+import dev.dsai03.hold_it.content.client.particles.OffsetedParticle;
+import dev.dsai03.hold_it.content.client.particles.OffsetedParticleEngine;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.LazySpellHolder;
-import dev.dsai03.hold_it.util.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -45,6 +45,7 @@ public class BallEntity extends ThrowableProjectile {
     public static final EntityDataAccessor<String> CASTER_DIMENSION = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.STRING);
     private Entity2EntityReference<LivingEntity> caster;
     public float lastPower = 1;
+    public Vec3 renderPosition;
     public final LazySpellHolder spell = new LazySpellHolder(() -> {
         var s = entityData.get(SPELL_RECIPE);
         if (s.isEmpty())
@@ -95,24 +96,37 @@ public class BallEntity extends ThrowableProjectile {
     }
 
     @OnlyIn(Dist.CLIENT)
+    Vec3 calculateRenderPosition() {
+        if (isRemoved())
+            return null;
+        if (getOwner() != null) {
+            var caster = getCaster();
+            if (caster == null)
+                return null;
+            var partialTick = Minecraft.getInstance().getFrameTime();
+            var lookAngle = caster.getViewVector(partialTick);
+            var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ()));
+            return getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD).pos();
+        }
+        return new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0);
+    }
+
+    Vec3 getRenderPosition() {
+        if (renderPosition == null)
+            renderPosition = calculateRenderPosition();
+        return renderPosition;
+    }
+
+    @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        var affinity = spell.getRandomAffinity();
-        if (affinity == null) return;
+        if (tickCount % 100 == 0) {
+            ParticleUtils.addParticle(ParticleUtils.createLightning(Minecraft.getInstance().level, position(), position().add(1, 1, 1), t -> spell.getSpell().colorParticle(t, getCaster())), p->p.setLifetime(100));
+
+        }
         for (int i = 0; i < 10; i++) {
-            OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()), Minecraft.getInstance().level, new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d) * entityData.get(POWER) * 0.5f), Vec3.ZERO)).offset(() -> {
-                if(isRemoved())
-                    return null;
-                if (getOwner() != null) {
-                    var caster = getCaster();
-                    if (caster == null)
-                        return null;
-                    var partialTick = Minecraft.getInstance().getFrameTime();
-                    var lookAngle = caster.getViewVector(partialTick);
-                    var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ()));
-                    return getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD).pos();
-                }
-                return new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0);
-            }));
+            var affinity = spell.getRandomAffinity();
+            if (affinity == null) return;
+            OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()), Minecraft.getInstance().level, new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d) * entityData.get(POWER) * 0.5f), Vec3.ZERO)).offset(this::getRenderPosition));
         }
     }
 

@@ -1,4 +1,4 @@
-package dev.dsai03.hold_it.util;
+package dev.dsai03.hold_it.content.client.particles;
 
 import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
@@ -17,10 +17,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.WeakHashMap;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -41,7 +39,7 @@ public class ParticleUtils {
             case WIND -> ParticleInit.AIR_ORBIT.get();
             case HELLFIRE -> ParticleInit.HELLFIRE.get();
             case ICE -> ParticleInit.FROST.get();
-            case LIGHTNING -> ParticleInit.LIGHTNING_BOLT.get();
+            case LIGHTNING -> ParticleInit.FLAME.get();
             case UNKNOWN -> null;
             case BLOOD -> ParticleInit.BLOOD.get();
         };
@@ -58,7 +56,14 @@ public class ParticleUtils {
         if (level == null) return;
         level.addParticle(particleOptions, pos.x, pos.y, pos.z, velocity.x, velocity.y, velocity.z);
     }
+    public static void addParticle(Particle particle, Consumer<Particle> consumer){
+        consumer.accept(particle);
+        Minecraft.getInstance().particleEngine.add(particle);
+    }
 
+    public static void addParticle(Particle particle){
+        Minecraft.getInstance().particleEngine.add(particle);
+    }
     public static void addParticle(ParticleOptions particleOptions, Vec3 pos, Vec3 velocity, Function<Particle, Particle> function) {
         Minecraft.getInstance().particleEngine.add(function.apply(createParticle(particleOptions, Minecraft.getInstance().level, pos, velocity)));
     }
@@ -162,5 +167,9 @@ public class ParticleUtils {
                 pos[0] = pos1;
             }
         };
+    }
+
+    public static Particle createLightning(ClientLevel level, Vec3 from, Vec3 to, Function<MAParticleType, MAParticleType> function) {
+        return createParticle(function.apply(new MAParticleType(ParticleInit.LIGHTNING_BOLT.get())), level, from, to);
     }
 }
