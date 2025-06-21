@@ -21,7 +21,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
-import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.List;
