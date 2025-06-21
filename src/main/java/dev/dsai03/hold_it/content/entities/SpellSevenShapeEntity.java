@@ -20,7 +20,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,10 +38,10 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
 
     public static final float defaultPower = 0.7f;
-    public static final float distanceToProjectile = 3;
+    public static final float distanceToProjectile = 2;
 
     public static float radius() {
-        return 8;
+        return 7;
     }
 
     public static float chargeTime() {
@@ -114,7 +113,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
         if (level().isClientSide)
             return;
 
-        if (getCaster() == null) {
+        if (getCaster() == null || !getCaster().isUsingItem()) {
             var projectile = getSphere();
             if (!projectile.isEmpty()) {
                 projectile.get(0).discard();
@@ -157,7 +156,6 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     protected void overChargeTick() {
         if (level().isClientSide)
             clientTick();
-        System.out.println("Overcharging: " + getLifetime());
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -171,7 +169,6 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void onCharged() {
-        System.out.println("Charged!");
     }
 
     @Override
@@ -195,13 +192,12 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void onInterrupt() {
-        System.out.println("Interrupted, level.isClientSide: " + level().isClientSide);
         if (!level().isClientSide) {
             var projectile = getSphere();
             if (!projectile.isEmpty()) {
-                System.out.println("Discarding sphere");
                 projectile.get(0).discard();
             }
+            this.discard();
         }
     }
 }

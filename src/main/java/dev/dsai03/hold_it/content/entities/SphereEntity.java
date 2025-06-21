@@ -139,11 +139,6 @@ public class SphereEntity extends ThrowableProjectile {
     }
 
     @Override
-    protected void onHitBlock(BlockHitResult hitResult) {
-        onHit(hitResult.getLocation().add(hitResult.getBlockPos().getCenter().subtract(hitResult.getLocation()).normalize().scale(0.1)));
-    }
-
-    @Override
     protected void onHitEntity(EntityHitResult hitResult) {
         if (level().isClientSide)
             return;

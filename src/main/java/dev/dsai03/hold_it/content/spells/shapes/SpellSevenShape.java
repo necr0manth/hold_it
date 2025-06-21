@@ -22,12 +22,12 @@ public class SpellSevenShape extends BaseChargeableSpellShape{
 
     @Override
     public int baselineCooldown() {
-        return 80;
+        return 70;
     }
 
     @Override
     public float initialComplexity() {
-        return 15;
+        return 25;
     }
 
     @Override
