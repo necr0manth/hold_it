@@ -11,6 +11,7 @@ import com.mna.particles.types.movers.ParticleSphereOrbitMover;
 import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
+import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.LazySpellHolder;
 import dev.dsai03.hold_it.util.ParticleUtils;
 import net.minecraft.core.BlockPos;
@@ -40,6 +41,7 @@ public class SphereEntity extends ThrowableProjectile {
     public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.COMPOUND_TAG);
     public Vec3 targetPosition;
     public float power = 1;
+    private Entity2EntityReference<LivingEntity> caster;
     public final LazySpellHolder spell = new LazySpellHolder(() -> {
         var s = entityData.get(SPELL_RECIPE);
         if (s.isEmpty())
@@ -89,6 +91,10 @@ public class SphereEntity extends ThrowableProjectile {
         return this.entityData.get(POWER);
     }
 
+    public LivingEntity getCaster() {
+        return caster.get();
+    }
+
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         return new EntityDimensions(getPower(), getPower(), false);
@@ -135,24 +141,28 @@ public class SphereEntity extends ThrowableProjectile {
 
     @Override
     protected void onHitBlock(BlockHitResult hitResult) {
-        super.onHitBlock(hitResult);
-        onHit(position());
+        onHit(hitResult.getLocation().add(hitResult.getBlockPos().getCenter().subtract(hitResult.getLocation()).normalize().scale(0.1)));
     }
 
     @Override
     protected void onHitEntity(EntityHitResult hitResult) {
-        super.onHitEntity(hitResult);
-        SpellSource source = new SpellSource((LivingEntity) getOwner(), InteractionHand.MAIN_HAND);
+        if (level().isClientSide)
+            return;
+        if (getCaster() == null) {
+            discard();
+            return;
+        }
+        SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
         SpellContext context = new SpellContext(this.level(), spell.getSpell());
         HashMap<SpellEffect, ComponentApplicationResult> results = SpellCaster.ApplyComponents(spell.getSpell(), source, new SpellTarget(hitResult.getEntity()), context);
-        if (getOwner() instanceof Player player) {
+        if (getCaster() instanceof Player player) {
             results.forEach((key, value) -> {
                 if (value.is_success) {
                     SpellCaster.addComponentRoteProgress(player, key);
                 }
             });
         }
-        onHit(position());
+        onHit(hitResult.getLocation());
     }
 
     private void onHit(Vec3 pos) {
