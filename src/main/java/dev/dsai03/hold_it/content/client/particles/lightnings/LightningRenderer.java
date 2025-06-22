@@ -1,9 +1,10 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.lightnings;
 
 import com.mna.particles.types.render.ParticleRenderTypes;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import dev.dsai03.hold_it.content.client.particles.core.IParticleRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraftforge.client.event.RenderLevelStageEvent;

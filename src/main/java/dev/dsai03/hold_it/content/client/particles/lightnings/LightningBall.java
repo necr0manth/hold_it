@@ -1,6 +1,7 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.lightnings;
 
 import com.mojang.math.Axis;
+import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.util.ClientScheduler;
 import lombok.AllArgsConstructor;
 import net.minecraft.client.Minecraft;
@@ -177,6 +178,8 @@ public class LightningBall {
         var random = new Random();
         for (int i = 0; i < 10; i++) {
             var particle = new LightningParticle(color0, 1);
+            if (cachedPosition == null)
+                return;
             particle.setPos(cachedPosition.add(new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(random.nextDouble() * cachedRadius)));
             particle.setEndPos(cachedPosition.add(new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(random.nextDouble() * cachedRadius)));
             particle.addTicker(p -> Minecraft.getInstance().level != level);

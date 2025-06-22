@@ -1,4 +1,4 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.core;
 
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -41,5 +41,5 @@ public abstract class ParticleManager<P extends IParticle, R> {
         }
     }
 
-    abstract void initRenderManager(ParticleRenderManager<P, R> manager);
+    public abstract void initRenderManager(ParticleRenderManager<P, R> manager);
 }

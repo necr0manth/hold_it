@@ -1,5 +1,7 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.offseted_particles;
 
+import dev.dsai03.hold_it.content.client.particles.core.ParticleManager;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleRenderManager;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 
@@ -13,7 +15,7 @@ public class OffsetedParticleEngine extends ParticleManager<OffsetedParticle, Re
     }
 
     @Override
-    void initRenderManager(ParticleRenderManager<OffsetedParticle, RenderLevelStageEvent> manager) {
+    public void initRenderManager(ParticleRenderManager<OffsetedParticle, RenderLevelStageEvent> manager) {
         MinecraftForge.EVENT_BUS.addListener((RenderLevelStageEvent event) -> {
             if (event.getStage() == AFTER_PARTICLES)
                 manager.render(event);

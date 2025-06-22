@@ -1,4 +1,4 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.core;
 
 import net.minecraft.world.phys.Vec3;
 

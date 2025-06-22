@@ -6,6 +6,8 @@ import com.mna.api.particles.ParticleInit;
 import com.mna.particles.bolt.FXLightningBolt;
 import com.mna.particles.bolt.LightningData;
 import com.mna.tools.math.Vector3;
+import dev.dsai03.hold_it.content.client.particles.core.BaseParticle;
+import dev.dsai03.hold_it.content.client.particles.core.IColoredParticle;
 import dev.dsai03.hold_it.mixins.client.ParticleAccessor;
 import dev.dsai03.hold_it.mixins.client.ParticleEngineAccessor;
 import net.minecraft.client.Minecraft;
@@ -43,7 +45,7 @@ public class ParticleUtils {
             case ENDER -> ParticleInit.ENDER.get();
             case FIRE -> ParticleInit.FLAME.get();
             case WATER -> ParticleInit.WATER.get();
-            case WIND -> ParticleInit.AIR_ORBIT.get();
+            case WIND -> ParticleInit.AIR_VELOCITY.get();
             case HELLFIRE -> ParticleInit.HELLFIRE.get();
             case ICE -> ParticleInit.FROST.get();
             case LIGHTNING -> ParticleInit.FLAME.get();

@@ -1,20 +1,16 @@
 package dev.dsai03.hold_it.content.entities;
 
-import com.mna.api.affinity.Affinity;
-import com.mna.api.particles.MAParticleType;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.spells.crafting.SpellRecipe;
-import dev.dsai03.hold_it.content.client.particles.OffsetedParticle;
-import dev.dsai03.hold_it.content.client.particles.OffsetedParticleEngine;
-import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.ParticleBallFx;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
+import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.LazySpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
-import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -53,8 +49,17 @@ public class BallEntity extends ThrowableProjectile {
         return SpellRecipe.fromNBT(s);
     });
 
-    @Getter
     private BallData renderBallData;
+    private ParticleBallFx.BallFxData fxData;
+    @OnlyIn(Dist.CLIENT)
+    ParticleBallFx fx = new ParticleBallFx(() -> fxData, this::getFxBallData);
+
+    public ParticleBallFx.BallData getFxBallData() {
+        var renderBallData = getRenderBallData();
+        if (renderBallData == null)
+            return null;
+        return renderBallData.toFxBallData();
+    }
 
     public BallEntity(EntityType<? extends BallEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -90,8 +95,9 @@ public class BallEntity extends ThrowableProjectile {
             lastPower = entityData.get(POWER);
             refreshDimensions();
         }
+        fxData = new ParticleBallFx.BallFxData(pt -> spell.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spell.getSpell()));
         if (level().isClientSide)
-            clientTick();
+            fx.tick();
     }
 
     public void setPower(float power) {
@@ -116,32 +122,11 @@ public class BallEntity extends ThrowableProjectile {
             renderBallData = new BallData(new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0), entityData.get(POWER));
     }
 
+    @OnlyIn(Dist.CLIENT)
     public BallData getRenderBallData() {
         if (isRemoved())
             return null;
         return renderBallData;
-    }
-
-    public Vec3 getRenderPosition() {
-        if (getRenderBallData() == null)
-            return null;
-        return getRenderBallData().pos();
-    }
-
-    public float getRenderRadius() {
-        if (getRenderBallData() == null)
-            return 0;
-        return getRenderBallData().power() * 0.5f;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public void clientTick() {
-        for (int i = 0; i < 10; i++) {
-            var affinity = spell.getRandomAffinityExcept(Affinity.LIGHTNING);
-            if (affinity == null)
-                break;
-            OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()), Minecraft.getInstance().level, new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d) * entityData.get(POWER) * 0.5f), Vec3.ZERO)).offset(this::getRenderPosition));
-        }
     }
 
     public AwesomeSpellShapeEntity getOwner() {
@@ -259,5 +244,8 @@ public class BallEntity extends ThrowableProjectile {
     }
 
     public record BallData(Vec3 pos, float power) {
+        public ParticleBallFx.BallData toFxBallData() {
+            return new ParticleBallFx.BallData(pos, power * 0.5f);
+        }
     }
 }

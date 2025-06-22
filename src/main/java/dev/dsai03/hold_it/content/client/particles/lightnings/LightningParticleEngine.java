@@ -1,5 +1,7 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.lightnings;
 
+import dev.dsai03.hold_it.content.client.particles.core.ParticleManager;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleRenderManager;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 
@@ -13,7 +15,7 @@ public class LightningParticleEngine extends ParticleManager<LightningParticle, 
     }
 
     @Override
-    void initRenderManager(ParticleRenderManager<LightningParticle, RenderLevelStageEvent> manager) {
+    public void initRenderManager(ParticleRenderManager<LightningParticle, RenderLevelStageEvent> manager) {
         MinecraftForge.EVENT_BUS.addListener((RenderLevelStageEvent event) -> {
             if (event.getStage() == AFTER_PARTICLES)
                 manager.render(event);

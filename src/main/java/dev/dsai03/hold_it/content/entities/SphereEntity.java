@@ -10,6 +10,7 @@ import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
+import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.LazySpellHolder;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
@@ -75,7 +76,7 @@ public class SphereEntity extends ThrowableProjectile {
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        var affinity = spell.getRandomAffinity();
+        var affinity = AffinityDistribution.fromSpell(spell.getSpell()).getRandomAffinity();
         if (affinity == null) return;
         for (int i = 0; i < 100; i++)
             ParticleUtils.addParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d))), Vec3.ZERO, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(()->new Vec3(xo, yo, zo), ParticleUtils.EMPTY_TICKER));

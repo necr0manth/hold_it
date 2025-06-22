@@ -1,8 +1,11 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.lightnings;
 
 import com.mna.api.particles.ParticleInit;
 import com.mna.tools.math.Vector3;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import dev.dsai03.hold_it.content.client.particles.core.BaseParticle;
+import dev.dsai03.hold_it.content.client.particles.core.IColoredParticle;
+import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.mixins.client.ParticleEngineAccessor;
 import lombok.Getter;
 import net.minecraft.client.Camera;

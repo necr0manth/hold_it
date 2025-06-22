@@ -1,4 +1,4 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.core;
 
 public class ParticleRenderManager<P extends IParticle, RENDER_CONTEXT> {
     private final IParticleRenderer<P, RENDER_CONTEXT> renderer;

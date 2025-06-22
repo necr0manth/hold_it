@@ -1,5 +1,7 @@
-package dev.dsai03.hold_it.content.client.particles;
+package dev.dsai03.hold_it.content.client.particles.offseted_particles;
 
+import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.core.BaseParticle;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.world.phys.Vec3;
 
