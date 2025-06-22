@@ -4,6 +4,7 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
@@ -41,7 +42,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     public static final float distanceToProjectile = 2;
 
     public static float radius() {
-        return 7;
+        return 6;
     }
 
     public static float chargeTime() {
@@ -176,14 +177,17 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
         var targets = new ArrayList<SpellTarget>();
         level().getEntities(getCaster(), getCaster().getBoundingBox().inflate(radius()), (Entity e) -> e != this && e.position().distanceTo(getCaster().position()) < radius()).stream().map(SpellTarget::new).forEach(targets::add);
         for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
-            for (int j = 0; j <= Mth.ceil(radius()); j++) {
+            for (int j = -1; j <= Mth.ceil(radius()); j++) {
                 for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
                     var pos = BlockPos.containing(getCaster().position().add(i, j, k));
                     if (pos.getCenter().distanceTo(getCaster().position()) > radius())
                         continue;
                     if (level().getBlockState(pos).isAir())
                         continue;
-                    targets.add(new SpellTarget(pos, null));
+                    if (j == -1)
+                        targets.add(new SpellTarget(pos, Direction.UP));
+                    else
+                        targets.add(new SpellTarget(pos, null));
                 }
             }
         }
