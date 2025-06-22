@@ -170,7 +170,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         if (level().isClientSide)
             return;
         for (var ball : getBalls()) {
-            ball.shoot(getCaster().getLookAngle());
+            ball.shoot(ball.position().subtract(getCaster().getEyePosition()).normalize());
         }
     }
 
