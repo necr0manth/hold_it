@@ -88,9 +88,6 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         commonTick();
     }
 
-    public record BallData(Vec3 pos, float radius) {
-    }
-
     public int maxBalls() {
         return 5;
     }
@@ -107,24 +104,24 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         return 0.8f;
     }
 
-    public static BallData getBallData(int i, float charge, float ballPower, float radius, float distanceToProjectile, Vec3 casterPosition, Vec3 casterLookAngle, float casterYRot, float time) {
+    public static BallEntity.BallData getBallData(int i, float charge, float ballPower, float radius, float distanceToProjectile, Vec3 casterPosition, Vec3 casterLookAngle, float casterYRot, float time) {
         int balls = Mth.ceil(charge / ballPower);
         if (charge <= ballPower)
-            return new BallData(casterPosition.add(casterLookAngle.scale(distanceToProjectile)), Math.min(charge, ballPower));
+            return new BallEntity.BallData(casterPosition.add(casterLookAngle.scale(distanceToProjectile)), Math.min(charge, ballPower));
         else if (charge < 2 * ballPower) {
             if (i == 0)
-                return new BallData(getBallData(0, ballPower, ballPower, radius, distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos.lerp(
-                        getBallData(0, 2 * ballPower, ballPower, radius, distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos, (charge % ballPower) / ballPower
+                return new BallEntity.BallData(getBallData(0, ballPower, ballPower, radius, distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos().lerp(
+                        getBallData(0, 2 * ballPower, ballPower, radius, distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos(), (charge % ballPower) / ballPower
                 ), ballPower);
             else
-                return new BallData(getBallData(1, 2 * ballPower, ballPower, Mth.lerp((charge % ballPower) / ballPower, radius / 2, radius), distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos, charge % ballPower);
+                return new BallEntity.BallData(getBallData(1, 2 * ballPower, ballPower, Mth.lerp((charge % ballPower) / ballPower, radius / 2, radius), distanceToProjectile, casterPosition, casterLookAngle, casterYRot, time).pos(), charge % ballPower);
         }
         if (Math.abs(casterLookAngle.normalize().dot(new Vec3(0, 1, 0)) - 1) < 0.000001f)
             casterLookAngle = new Vec3(-0.000001 * Math.sin(casterYRot), 1, 0.000001 * Math.cos(casterYRot));
         Quaternionf r = new Quaternionf().lookAlong((float) casterLookAngle.x, (float) casterLookAngle.y, (float) casterLookAngle.z, 0, 1, 0);
         var angle = i * 2 * Math.PI / charge * ballPower + 2 * Math.PI * (charge / ballPower / 2) + time;
         var pos = r.transformInverse(new Vector3d(radius * Math.sin(angle), radius * Math.cos(angle), -distanceToProjectile)).add(casterPosition.x, casterPosition.y, casterPosition.z);
-        return new BallData(new Vec3(pos.get(new Vector3f())), i == balls - 1 ? (Math.abs(charge % ballPower) < 1e-6f ? ballPower : charge % ballPower) : ballPower);
+        return new BallEntity.BallData(new Vec3(pos.get(new Vector3f())), i == balls - 1 ? (Math.abs(charge % ballPower) < 1e-6f ? ballPower : charge % ballPower) : ballPower);
     }
 
     public float getCharge() {
@@ -145,8 +142,8 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         saveBalls(projectiles);
     }
 
-    public BallData getBallData(int ball, Vec3 castPosition, Vec3 castVector, float castYRot) {
-        return getBallData(ball, getCharge(), chargedBallPower(), radius(), distanceToProjectiles(), castPosition.add(0, Math.max(0, -castVector.normalize().y * 0.5f+1), 0), castVector, castYRot, getLifetime());
+    public BallEntity.BallData getBallData(int ball, Vec3 castPosition, Vec3 castVector, float castYRot, float partialTick) {
+        return getBallData(ball, getCharge(), chargedBallPower(), radius(), distanceToProjectiles(), castPosition.add(0, Math.max(0, -castVector.normalize().y * 0.5f + 1), 0), castVector, castYRot, (float) tickCount / 20 + partialTick);
     }
 
     @Override

@@ -14,8 +14,8 @@ public abstract class BaseParticle<T extends BaseParticle<T>> implements IPartic
 
     public abstract Vec3 getSpeed();
 
-    float lifetime = 0;
-    float maxLifetime = -1;
+    public float lifetime = 0;
+    public float maxLifetime = -1;
     private BiConsumer<T, Float> renderTick;
     private Predicate<T> tick;
 
@@ -63,8 +63,18 @@ public abstract class BaseParticle<T extends BaseParticle<T>> implements IPartic
         return (T) this;
     }
 
+    public final T pos(Vec3 pos) {
+        setPos(pos);
+        return cast();
+    }
+
     public final T speed(Vec3 speed) {
         setSpeed(speed);
+        return cast();
+    }
+
+    public final T maxLifetime(float maxLifetime) {
+        this.maxLifetime = maxLifetime;
         return cast();
     }
 }

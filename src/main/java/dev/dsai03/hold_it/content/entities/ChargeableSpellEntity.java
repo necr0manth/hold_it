@@ -16,9 +16,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkHooks;
@@ -43,6 +41,12 @@ public abstract class ChargeableSpellEntity extends Entity {
         cachedRecipe = null;
         setNoGravity(true);
         setInvulnerable(true);
+        refreshDimensions();
+    }
+
+    @Override
+    public EntityDimensions getDimensions(Pose pPose) {
+        return new EntityDimensions(0, 0, true);
     }
 
     @Override
@@ -64,7 +68,7 @@ public abstract class ChargeableSpellEntity extends Entity {
     }
 
     public void tick() {
-        if(getCaster()!=null)
+        if (getCaster() != null)
             setPos(getCaster().position());
         if (!level().isClientSide) {
             if (getCaster() == null) {

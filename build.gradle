@@ -87,6 +87,13 @@ repositories {
 
 dependencies {
     minecraft "net.neoforged:forge:${minecraft_version}-${neo_version}"
+
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
+
+    testCompileOnly("org.projectlombok:lombok:1.18.38")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.38")
+
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.0-beta.5"))
