@@ -64,6 +64,8 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 
     @OnlyIn(Dist.CLIENT)
     private void clientTick() {
+        System.out.println("aaa");
+
         var r = Math.min(getLifetime() / chargeTime(), 1) * radius();
         int n = Mth.floor(r * r * r * 0.2);
         var affinities = getSpell().getAffinity().keySet().toArray(Affinity[]::new);
