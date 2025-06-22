@@ -158,7 +158,6 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void onCharged() {
-
     }
 
     @Override

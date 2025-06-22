@@ -16,7 +16,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.awt.*;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -66,7 +65,7 @@ public class ParticleBallFx {
                 }
             } else if (affinity == Affinity.BLOOD) {
                 for (int j = 0; j < 10; j++) {
-                    var pos = RandomUtils.randomVectorFromBall().scale(Math.pow(random.nextDouble(), 5) * ballData.radius()*0.7);
+                    var pos = RandomUtils.randomVectorFromBall().scale(Math.pow(random.nextDouble(), 5) * ballData.radius() * 0.7);
                     OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.BLOOD.get()).setGravity(0.0005f).setScale(0.01f)), Minecraft.getInstance().level, pos, pos.normalize().scale(random.nextDouble() * 0.01))).offset(positionSupplier));
                 }
             } else {

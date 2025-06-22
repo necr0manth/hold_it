@@ -50,10 +50,12 @@ public class BallEntity extends ThrowableProjectile {
     });
 
     private BallData renderBallData;
+    @OnlyIn(Dist.CLIENT)
     private ParticleBallFx.BallFxData fxData;
     @OnlyIn(Dist.CLIENT)
-    ParticleBallFx fx = new ParticleBallFx(() -> fxData, this::getFxBallData);
+    ParticleBallFx fx;
 
+    @OnlyIn(Dist.CLIENT)
     public ParticleBallFx.BallData getFxBallData() {
         var renderBallData = getRenderBallData();
         if (renderBallData == null)
@@ -95,9 +97,16 @@ public class BallEntity extends ThrowableProjectile {
             lastPower = entityData.get(POWER);
             refreshDimensions();
         }
-        fxData = new ParticleBallFx.BallFxData(pt -> spell.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spell.getSpell()));
         if (level().isClientSide)
-            fx.tick();
+            clientTick();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void clientTick() {
+        fxData = new ParticleBallFx.BallFxData(pt -> spell.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spell.getSpell()));
+        if (fx == null)
+            fx = new ParticleBallFx(() -> fxData, this::getFxBallData);
+        fx.tick();
     }
 
     public void setPower(float power) {
@@ -244,6 +253,7 @@ public class BallEntity extends ThrowableProjectile {
     }
 
     public record BallData(Vec3 pos, float power) {
+        @OnlyIn(Dist.CLIENT)
         public ParticleBallFx.BallData toFxBallData() {
             return new ParticleBallFx.BallData(pos, power * 0.5f);
         }
