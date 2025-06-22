@@ -42,7 +42,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     public static final float distanceToProjectile = 2;
 
     public static float radius() {
-        return 6;
+        return 2;
     }
 
     public static float chargeTime() {
@@ -179,8 +179,8 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
         for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
             for (int j = -1; j <= Mth.ceil(radius()); j++) {
                 for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
-                    var pos = BlockPos.containing(getCaster().position().add(i, j, k));
-                    if (pos.getCenter().distanceTo(getCaster().position()) > radius())
+                    var pos = BlockPos.containing(getSphere().get(0).position().add(i, j, k));
+                    if (pos.getCenter().distanceTo(getSphere().get(0).position()) > radius())
                         continue;
                     if (level().getBlockState(pos).isAir())
                         continue;
