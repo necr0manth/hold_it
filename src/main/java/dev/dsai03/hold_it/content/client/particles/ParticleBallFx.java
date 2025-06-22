@@ -56,13 +56,18 @@ public class ParticleBallFx {
 
             if (affinity == Affinity.WIND) {
                 for (int j = 0; j < 5; j++) {
-                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(50,50,50)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius() * 0.8f), Vec3.ZERO)).offset(positionSupplier).addTicker(p -> {
+                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(50, 50, 50)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius() * 0.8f), Vec3.ZERO)).offset(positionSupplier).addTicker(p -> {
                         if (p.getSpeed().length() < 0.001f) {
                             p.setSpeed(RandomUtils.randomVectorFromBall().scale(0.3f * p.getPos().length()));
                         }
                         p.setSpeed(p.getSpeed().add(p.getPos().scale(-0.3f * p.getPos().length())));
                         return false;
                     }));
+                }
+            } else if (affinity == Affinity.BLOOD) {
+                for (int j = 0; j < 10; j++) {
+                    var pos = RandomUtils.randomVectorFromBall().scale(Math.pow(random.nextDouble(), 5) * ballData.radius()*0.7);
+                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.BLOOD.get()).setGravity(0.0005f).setScale(0.01f)), Minecraft.getInstance().level, pos, pos.normalize().scale(random.nextDouble() * 0.01))).offset(positionSupplier));
                 }
             } else {
                 var particleType = ParticleUtils.getParticleType(affinity);
