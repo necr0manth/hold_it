@@ -39,6 +39,9 @@ import java.util.HashMap;
 public class SphereEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final int EXPLOSION_DELAY = 100;
+    private int lifetime = 0;
+    private boolean isStationary = false;
     public Vec3 targetPosition;
     public float power = 1;
     private Entity2EntityReference<LivingEntity> caster;
@@ -60,18 +63,67 @@ public class SphereEntity extends ThrowableProjectile {
         setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
     }
 
+    public void setStationary() {
+        this.isStationary = true;
+        this.targetPosition = null;
+        this.setDeltaMovement(Vec3.ZERO);
+    }
+
+    public void setTargetPosition(Vec3 target) {
+        this.targetPosition = target;
+    }
+
+    @Override
     public void tick() {
-        if (targetPosition != null)
-            setDeltaMovement(targetPosition.subtract(position()));
+        if (!level().isClientSide) {
+            lifetime++;
+            if (isStationary) {
+                setDeltaMovement(Vec3.ZERO);
+                if (lifetime >= EXPLOSION_DELAY) {
+                    explode();
+                    discard();
+                }
+            } else if (targetPosition != null) {
+                setDeltaMovement(targetPosition.subtract(position()).scale(0.1));
+            }
+        }
+
         super.tick();
+
         if (getPower() != power && !this.level().isClientSide) {
             setPower(power);
             refreshDimensions();
         }
-        if (targetPosition != null)
-            setDeltaMovement(targetPosition.subtract(position()));
-        if (level().isClientSide)
+
+        if (level().isClientSide) {
             clientTick();
+        }
+    }
+
+    private void explode() {
+        if (level().isClientSide || getOwner() == null) return;
+
+        var targets = new ArrayList<SpellTarget>();
+        for (int i = -2; i <= 2; i++) {
+            for (int j = -2; j <= 2; j++) {
+                for (int k = -2; k <= 2; k++) {
+                    targets.add(new SpellTarget(BlockPos.containing(position().add(i, j, k)), null));
+                }
+            }
+        }
+
+        for (var target : targets) {
+            SpellSource source = new SpellSource((LivingEntity) getOwner(), InteractionHand.MAIN_HAND);
+            SpellContext context = new SpellContext(this.level(), spell.getSpell());
+            HashMap<SpellEffect, ComponentApplicationResult> results = SpellCaster.ApplyComponents(spell.getSpell(), source, target, context);
+            if (getOwner() instanceof Player player) {
+                results.forEach((key, value) -> {
+                    if (value.is_success) {
+                        SpellCaster.addComponentRoteProgress(player, key);
+                    }
+                });
+            }
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -79,7 +131,9 @@ public class SphereEntity extends ThrowableProjectile {
         var affinity = AffinityDistribution.fromSpell(spell.getSpell()).getRandomAffinity();
         if (affinity == null) return;
         for (int i = 0; i < 100; i++)
-            ParticleUtils.addParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d))), Vec3.ZERO, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(()->new Vec3(xo, yo, zo), ParticleUtils.EMPTY_TICKER));
+            ParticleUtils.addParticle(spell.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
+                    position().add(new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d))),
+                    Vec3.ZERO, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> new Vec3(xo, yo, zo), ParticleUtils.EMPTY_TICKER));
     }
 
     public void setPower(float power) {
@@ -106,7 +160,6 @@ public class SphereEntity extends ThrowableProjectile {
         this.entityData.define(SPELL_RECIPE, new CompoundTag());
     }
 
-
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
@@ -114,7 +167,6 @@ public class SphereEntity extends ThrowableProjectile {
             this.refreshDimensions();
         }
     }
-
 
     public void setSpell(ISpellDefinition spell) {
         CompoundTag nbt = new CompoundTag();
@@ -127,6 +179,13 @@ public class SphereEntity extends ThrowableProjectile {
         super.addAdditionalSaveData(compound);
         compound.putFloat("power", this.entityData.get(POWER));
         compound.put("spell", entityData.get(SPELL_RECIPE));
+        compound.putBoolean("isStationary", isStationary);
+        compound.putInt("lifetime", lifetime);
+        if (targetPosition != null) {
+            compound.putDouble("targetX", targetPosition.x);
+            compound.putDouble("targetY", targetPosition.y);
+            compound.putDouble("targetZ", targetPosition.z);
+        }
     }
 
     @Override
@@ -136,57 +195,18 @@ public class SphereEntity extends ThrowableProjectile {
         if (pCompound.contains("spell")) {
             entityData.set(SPELL_RECIPE, (CompoundTag) pCompound.get("spell"));
         }
-
+        isStationary = pCompound.getBoolean("isStationary");
+        lifetime = pCompound.getInt("lifetime");
+        if (pCompound.contains("targetX")) {
+            targetPosition = new Vec3(pCompound.getDouble("targetX"), pCompound.getDouble("targetY"), pCompound.getDouble("targetZ"));
+        }
     }
 
     @Override
     protected void onHitEntity(EntityHitResult hitResult) {
-        if (level().isClientSide)
-            return;
-        if (getCaster() == null) {
+        if (!level().isClientSide && !isStationary) {
+            explode();
             discard();
-            return;
         }
-        SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
-        SpellContext context = new SpellContext(this.level(), spell.getSpell());
-        HashMap<SpellEffect, ComponentApplicationResult> results = SpellCaster.ApplyComponents(spell.getSpell(), source, new SpellTarget(hitResult.getEntity()), context);
-        if (getCaster() instanceof Player player) {
-            results.forEach((key, value) -> {
-                if (value.is_success) {
-                    SpellCaster.addComponentRoteProgress(player, key);
-                }
-            });
-        }
-        onHit(hitResult.getLocation());
-    }
-
-    private void onHit(Vec3 pos) {
-        if (getOwner() == null) {
-            discard();
-            return;
-        }
-        if (level().isClientSide)
-            return;
-        var targets = new ArrayList<SpellTarget>();
-        for (int i = -2; i <= 2; i++) {
-            for (int j = -2; j <= 2; j++) {
-                for (int k = -2; k <= 2; k++) {
-                    targets.add(new SpellTarget(BlockPos.containing(position().add(i, j, k)), null));
-                }
-            }
-        }
-        for (var target : targets) {
-            SpellSource source = new SpellSource((LivingEntity) getOwner(), InteractionHand.MAIN_HAND);
-            SpellContext context = new SpellContext(this.level(), spell.getSpell());
-            HashMap<SpellEffect, ComponentApplicationResult> results = SpellCaster.ApplyComponents(spell.getSpell(), source, target, context);
-            if (getOwner() instanceof Player player) {
-                results.forEach((key, value) -> {
-                    if (value.is_success) {
-                        SpellCaster.addComponentRoteProgress(player, key);
-                    }
-                });
-            }
-        }
-        discard();
     }
 }
