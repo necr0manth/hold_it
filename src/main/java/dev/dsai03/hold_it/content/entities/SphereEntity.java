@@ -12,6 +12,7 @@ import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -19,9 +20,16 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -71,6 +79,8 @@ public class SphereEntity extends Projectile {
         }
 
         super.tick();
+
+        this.setPos(position().add(getDeltaMovement()));
 
         if (entityData.get(POWER) != lastPower && !this.level().isClientSide) {
             lastPower = entityData.get(POWER);
