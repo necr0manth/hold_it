@@ -1,69 +1,97 @@
 package dev.dsai03.hold_it.util;
 
+import lombok.AllArgsConstructor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 public class Entity2EntityReference<T extends Entity> {
-    public final EntityDataAccessor<Integer> ID;
-    public final EntityDataAccessor<String> DIMENSION;
+    public final DataAccessor dataAccessor;
     public final Entity entity;
     public final String name;
     private UUID uuid;
+    private final static Map<Class<? extends Entity>, DataAccessor> dataAccessorMap = new HashMap<>();
+
+    @AllArgsConstructor
+    public static class DataAccessor {
+        public final EntityDataAccessor<Integer> ID;
+        public final EntityDataAccessor<String> DIMENSION;
+
+        public DataAccessor(Class<? extends Entity> cls) {
+            this(SynchedEntityData.defineId(cls, EntityDataSerializers.INT), SynchedEntityData.defineId(cls, EntityDataSerializers.STRING));
+        }
+    }
 
     public Entity2EntityReference(EntityDataAccessor<Integer> idDataAccessor, EntityDataAccessor<String> dimensionDataAccessor, String name, Entity entity) {
-        this.ID = idDataAccessor;
-        this.DIMENSION = dimensionDataAccessor;
+        this(new DataAccessor(idDataAccessor, dimensionDataAccessor), name, entity);
+    }
+
+    public Entity2EntityReference(DataAccessor dataAccessor, String name, Entity entity) {
+        this.dataAccessor = dataAccessor;
         this.entity = entity;
         this.name = name;
+    }
+
+    public <C extends Entity, E extends C> Entity2EntityReference(String name, E entity, Class<C> cls) {
+        this(dataAccessorMap.computeIfAbsent(cls, DataAccessor::new), name, entity);
+    }
+
+    public static <C extends Entity, E extends C, T extends Entity> Entity2EntityReference<T> createAndDefine(String name, E entity, Class<C> cls) {
+        var ref = new Entity2EntityReference<T>(name, entity, cls);
+        ref.define();
+        return ref;
     }
 
     public void save(CompoundTag tag) {
         var tag1 = new CompoundTag();
         tag1.putUUID("uuid", uuid);
-        tag1.putString("dimension", entity.getEntityData().get(DIMENSION));
+        tag1.putString("dimension", entity.getEntityData().get(dataAccessor.DIMENSION));
         tag.put(name, tag1);
     }
 
     public void load(CompoundTag tag) {
         var tag1 = tag.getCompound(name);
         uuid = tag1.getUUID("uuid");
-        entity.getEntityData().set(DIMENSION, tag1.getString("dimension"));
+        entity.getEntityData().set(dataAccessor.DIMENSION, tag1.getString("dimension"));
     }
 
     public void define() {
-        entity.getEntityData().define(ID, -1);
-        entity.getEntityData().define(DIMENSION, "");
+        entity.getEntityData().define(dataAccessor.ID, -1);
+        entity.getEntityData().define(dataAccessor.DIMENSION, "");
     }
 
     public T get() {
         if (entity.level() instanceof ServerLevel serverLevel) {
             if (uuid == null)
                 return null;
-            var dimension = entity.getEntityData().get(DIMENSION);
+            var dimension = entity.getEntityData().get(dataAccessor.DIMENSION);
             if (dimension.isEmpty())
                 return null;
             var level = serverLevel.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, ResourceLocation.tryParse(dimension)));
-            if(level == null)
+            if (level == null)
                 return null;
             return (T) level.getEntity(uuid);
         }
-        if (!Objects.equals(entity.level().dimension().location().toString(), entity.getEntityData().get(DIMENSION)))
+        if (!Objects.equals(entity.level().dimension().location().toString(), entity.getEntityData().get(dataAccessor.DIMENSION)))
             return null;
-        var id = entity.getEntityData().get(ID);
+        var id = entity.getEntityData().get(dataAccessor.ID);
         return (T) entity.level().getEntity(id);
     }
 
     public void set(T entity) {
         uuid = entity.getUUID();
-        this.entity.getEntityData().set(ID, entity.getId());
-        this.entity.getEntityData().set(DIMENSION, entity.level().dimension().location().toString());
+        this.entity.getEntityData().set(dataAccessor.ID, entity.getId());
+        this.entity.getEntityData().set(dataAccessor.DIMENSION, entity.level().dimension().location().toString());
     }
 }

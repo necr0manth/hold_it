@@ -3,21 +3,14 @@ package dev.dsai03.hold_it.content.entities;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
+import dev.dsai03.hold_it.util.Entity2EntityReference;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.world.entity.EntityType;
@@ -27,7 +20,7 @@ import java.util.List;
 import java.util.Random;
 
 public class SpellSevenShapeEntity extends ChargeableSpellEntity {
-    public static final EntityDataAccessor<CompoundTag> SPHERE = SynchedEntityData.defineId(SpellSevenShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private Entity2EntityReference<SphereEntity> sphereRef;
     Random random = new Random();
 
     public SpellSevenShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
@@ -61,51 +54,19 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        entityData.define(SPHERE, new CompoundTag());
-    }
-
-    public List<SphereEntity> getSphere() {
-        var tag = entityData.get(SPHERE);
-        var ans = new ArrayList<SphereEntity>();
-        if (!tag.contains("sphere")) {
-            return ans;
-        }
-        if (!(level() instanceof ServerLevel serverLevel)) {
-            return ans;
-        }
-        for (var i : tag.getList("sphere", Tag.TAG_INT_ARRAY)) {
-            Entity entity = serverLevel.getEntity(NbtUtils.loadUUID(i));
-            if (entity instanceof SphereEntity sphere) {
-                ans.add(sphere);
-            }
-        }
-        if (ans.size() > 1) {
-            ans.subList(1, ans.size()).clear();
-        }
-        return ans;
-    }
-
-    public void saveSphere(List<SphereEntity> sphere) {
-        ListTag list = new ListTag();
-        if (!sphere.isEmpty()) {
-            list.add(NbtUtils.createUUID(sphere.get(0).getUUID()));
-        }
-        var tag = new CompoundTag();
-        tag.put("sphere", list);
-        entityData.set(SPHERE, tag);
+        sphereRef = Entity2EntityReference.createAndDefine("sphere", this, SpellSevenShapeEntity.class);
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        compound.put("sphere", entityData.get(SPHERE));
+        sphereRef.save(compound);
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        if (compound.contains("sphere"))
-            entityData.set(SPHERE, compound.getCompound("sphere"));
+        sphereRef.load(compound);
     }
 
     @Override
@@ -115,35 +76,30 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
             return;
 
         if (getCaster() == null || !getCaster().isUsingItem()) {
-            var projectile = getSphere();
-            if (!projectile.isEmpty()) {
-                projectile.get(0).setStationary();
+            var projectile = sphereRef.get();
+            if (projectile != null) {
+                projectile.setStationary();
             }
             this.discard();
             return;
         }
 
         var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
-        var projectile = getSphere();
+        var projectile = sphereRef.get();
         float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
-        SphereEntity proj;
 
-        if (!projectile.isEmpty()) {
-            proj = projectile.get(0);
-            proj.setPower(power);
-            proj.setTargetPosition(centerPos);
+        if (projectile != null) {
+            projectile.setPower(power);
+            projectile.targetPosition = centerPos;
         } else {
-            proj = new SphereEntity(level(), getCaster());
+            var proj = new SphereEntity(level(), this);
             proj.setOwner(getCaster());
             proj.setSpell(getSpell());
             proj.setPos(centerPos);
             proj.setPower(power);
             level().addFreshEntity(proj);
-            projectile = new ArrayList<>();
-            projectile.add(proj);
+            sphereRef.set(proj);
         }
-
-        saveSphere(projectile);
     }
 
     @Override
@@ -175,18 +131,18 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     @Override
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
-        var sphere = getSphere();
-        if (sphere.isEmpty()) return targets;
+        var sphere = sphereRef.get();
+        if (sphere == null) return targets;
 
-        level().getEntities(getCaster(), sphere.get(0).getBoundingBox().inflate(radius()),
-                        (Entity e) -> e != this && e != sphere.get(0) && e.position().distanceTo(sphere.get(0).position()) < radius())
+        level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius()),
+                        (Entity e) -> e != this && e != sphere && e.position().distanceTo(sphere.position()) < radius())
                 .stream().map(SpellTarget::new).forEach(targets::add);
 
         for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
             for (int j = -1; j <= Mth.ceil(radius()); j++) {
                 for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
-                    var pos = BlockPos.containing(sphere.get(0).position().add(i, j, k));
-                    if (pos.getCenter().distanceTo(sphere.get(0).position()) > radius())
+                    var pos = BlockPos.containing(sphere.position().add(i, j, k));
+                    if (pos.getCenter().distanceTo(sphere.position()) > radius())
                         continue;
                     if (level().getBlockState(pos).isAir())
                         continue;
@@ -203,9 +159,9 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void onInterrupt() {
         if (!level().isClientSide) {
-            var projectile = getSphere();
-            if (!projectile.isEmpty()) {
-                projectile.get(0).setStationary();
+            var projectile = sphereRef.get();
+            if (projectile != null) {
+                projectile.setStationary();
             }
             this.discard();
         }

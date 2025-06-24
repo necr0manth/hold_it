@@ -4,13 +4,13 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
-import com.mna.spells.crafting.SpellRecipe;
 import dev.dsai03.hold_it.content.client.particles.ParticleBallFx;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
-import dev.dsai03.hold_it.util.LazySpellHolder;
+import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -38,16 +38,10 @@ public class BallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.COMPOUND_TAG);
     public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
-    public static final EntityDataAccessor<Integer> CASTER_ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
-    public static final EntityDataAccessor<String> CASTER_DIMENSION = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.STRING);
-    private Entity2EntityReference<LivingEntity> caster;
+    private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
-    public final LazySpellHolder spell = new LazySpellHolder(() -> {
-        var s = entityData.get(SPELL_RECIPE);
-        if (s.isEmpty())
-            return null;
-        return SpellRecipe.fromNBT(s);
-    });
+    @Getter
+    private SpellHolder spellHolder;
 
     private BallData renderBallData;
     @OnlyIn(Dist.CLIENT)
@@ -72,13 +66,13 @@ public class BallEntity extends ThrowableProjectile {
     public BallEntity(Level level, AwesomeSpellShapeEntity owner, int id) {
         this(AwesomeEntityTypes.BALL_ENTITY_TYPE.get(), level);
         setOwner(owner);
-        caster.set(owner.getCaster());
+        casterRef.set(owner.getCaster());
         setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
         entityData.set(ID, id);
     }
 
     public LivingEntity getCaster() {
-        return caster.get();
+        return casterRef.get();
     }
 
     public void tick() {
@@ -103,7 +97,7 @@ public class BallEntity extends ThrowableProjectile {
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        fxData = new ParticleBallFx.BallFxData(pt -> spell.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spell.getSpell()));
+        fxData = new ParticleBallFx.BallFxData(pt -> spellHolder.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spellHolder.getSpell()));
         if (fx == null)
             fx = new ParticleBallFx(() -> fxData, this::getFxBallData);
         fx.tick();
@@ -159,8 +153,7 @@ public class BallEntity extends ThrowableProjectile {
         this.entityData.define(SPELL_RECIPE, new CompoundTag());
         this.entityData.define(ID, -1);
         this.entityData.define(THROWN, false);
-        caster = new Entity2EntityReference<>(CASTER_ID, CASTER_DIMENSION, "caster", this);
-        caster.define();
+        casterRef = Entity2EntityReference.createAndDefine("caster", this, BallEntity.class);
     }
 
 
@@ -185,7 +178,7 @@ public class BallEntity extends ThrowableProjectile {
         compound.putBoolean("thrown", this.entityData.get(THROWN));
         compound.put("spell", entityData.get(SPELL_RECIPE));
         compound.putInt("index", entityData.get(ID));
-        caster.save(compound);
+        casterRef.save(compound);
     }
 
     @Override
@@ -194,7 +187,7 @@ public class BallEntity extends ThrowableProjectile {
         entityData.set(POWER, pCompound.getFloat("power"));
         entityData.set(THROWN, pCompound.getBoolean("thrown"));
         entityData.set(SPELL_RECIPE, (CompoundTag) pCompound.get("spell"));
-        caster.load(pCompound);
+        casterRef.load(pCompound);
     }
 
     @Override
@@ -214,8 +207,8 @@ public class BallEntity extends ThrowableProjectile {
             return;
         }
         SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
-        SpellContext context = new SpellContext(this.level(), spell.getSpell());
-        SpellUtils.cast(spell.getSpell(), source, new SpellTarget(hitResult.getEntity()), context);
+        SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
+        SpellUtils.cast(spellHolder.getSpell(), source, new SpellTarget(hitResult.getEntity()), context);
         onHit(hitResult.getLocation());
     }
 
@@ -241,8 +234,8 @@ public class BallEntity extends ThrowableProjectile {
         }
         for (var target : targets) {
             SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
-            SpellContext context = new SpellContext(this.level(), spell.getSpell());
-            SpellUtils.cast(spell.getSpell(), source, target, context);
+            SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
+            SpellUtils.cast(spellHolder.getSpell(), source, target, context);
         }
         discard();
     }
