@@ -12,7 +12,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -25,17 +24,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
-    public static final EntityDataAccessor<CompoundTag> BALLS = SynchedEntityData.defineId(AwesomeSpellShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
+public class ChargeBallEntity extends ChargeableSpellEntity {
+    public static final EntityDataAccessor<CompoundTag> BALL = SynchedEntityData.defineId(ChargeBallEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
-    public AwesomeSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
+    public ChargeBallEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
         super(entityType, world);
     }
 
-    public AwesomeSpellShapeEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
-        super(AwesomeEntityTypes.AWESOME_SHAPE.get(), caster, spell, world);
+    public ChargeBallEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
+        super(AwesomeEntityTypes.BALL_SHAPE.get(), caster, spell, world);
     }
-
 
     @Override
     protected boolean isCharged() {
@@ -45,11 +43,11 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        entityData.define(BALLS, new CompoundTag());
+        entityData.define(BALL, new CompoundTag());
     }
 
     public List<BallEntity> getBalls() {
-        var tag = entityData.get(BALLS);
+        var tag = entityData.get(BALL);
 
         var ans = new ArrayList<BallEntity>();
         if (!tag.contains("balls"))
@@ -67,7 +65,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         }
         var tag = new CompoundTag();
         tag.put("balls", list);
-        entityData.set(BALLS, tag);
+        entityData.set(BALL, tag);
     }
 
     public static float chargeTime() {
@@ -76,13 +74,13 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        compound.put("balls", entityData.get(BALLS));
+        compound.put("balls", entityData.get(BALL));
     }
 
     protected void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         if (compound.contains("balls"))
-            entityData.set(BALLS, compound.getCompound("balls"));
+            entityData.set(BALL, compound.getCompound("balls"));
     }
 
     @Override
