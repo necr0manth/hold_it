@@ -36,7 +36,6 @@ import java.util.ArrayList;
 public class BallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.BOOLEAN);
-    public static final EntityDataAccessor<CompoundTag> SPELL_RECIPE = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.COMPOUND_TAG);
     public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
@@ -150,9 +149,9 @@ public class BallEntity extends ThrowableProjectile {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(POWER, 0.0f);
-        this.entityData.define(SPELL_RECIPE, new CompoundTag());
         this.entityData.define(ID, -1);
         this.entityData.define(THROWN, false);
+        spellHolder = SpellHolder.createAndDefine(entityData, "spell", BallEntity.class);
         casterRef = Entity2EntityReference.createAndDefine("caster", this, BallEntity.class);
     }
 
@@ -166,9 +165,7 @@ public class BallEntity extends ThrowableProjectile {
     }
 
     public void setSpell(ISpellDefinition spell) {
-        CompoundTag nbt = new CompoundTag();
-        spell.writeToNBT(nbt);
-        entityData.set(SPELL_RECIPE, nbt);
+        spellHolder.setSpell(spell);
     }
 
     @Override
@@ -176,8 +173,8 @@ public class BallEntity extends ThrowableProjectile {
         super.addAdditionalSaveData(compound);
         compound.putFloat("power", this.entityData.get(POWER));
         compound.putBoolean("thrown", this.entityData.get(THROWN));
-        compound.put("spell", entityData.get(SPELL_RECIPE));
         compound.putInt("index", entityData.get(ID));
+        spellHolder.save(compound);
         casterRef.save(compound);
     }
 
@@ -186,7 +183,7 @@ public class BallEntity extends ThrowableProjectile {
         super.readAdditionalSaveData(pCompound);
         entityData.set(POWER, pCompound.getFloat("power"));
         entityData.set(THROWN, pCompound.getBoolean("thrown"));
-        entityData.set(SPELL_RECIPE, (CompoundTag) pCompound.get("spell"));
+        spellHolder.load(pCompound);
         casterRef.load(pCompound);
     }
 

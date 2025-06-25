@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
-    public static final EntityDataAccessor<CompoundTag> BALLS = SynchedEntityData.defineId(AwesomeSpellShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final EntityDataAccessor<CompoundTag> BALLS = SynchedEntityData.defineId(AwesomeSpellShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
     public AwesomeSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
         super(entityType, world);
