@@ -63,15 +63,6 @@ public class BallEntity extends ThrowableProjectile {
         setInvulnerable(true);
     }
 
-    public BallEntity(Level level, ChargeBallEntity owner, int id) {
-        this(AwesomeEntityTypes.BALL_ENTITY_TYPE.get(), level);
-        setOwner(owner);
-        casterRef.set(owner.getCaster());
-        setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
-        entityData.set(ID, id);
-    }
-
-
     public BallEntity(Level level, AwesomeSpellShapeEntity owner, int id) {
         this(AwesomeEntityTypes.BALL_ENTITY_TYPE.get(), level);
         setOwner(owner);
@@ -149,6 +140,7 @@ public class BallEntity extends ThrowableProjectile {
             return null;
         throw new RuntimeException("0_o");
     }
+
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         var power = entityData.get(POWER);

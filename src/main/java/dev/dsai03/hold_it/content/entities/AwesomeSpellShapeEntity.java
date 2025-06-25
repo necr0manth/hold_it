@@ -12,7 +12,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -35,7 +34,6 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     public AwesomeSpellShapeEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
         super(AwesomeEntityTypes.AWESOME_SHAPE.get(), caster, spell, world);
     }
-
 
     @Override
     protected boolean isCharged() {
