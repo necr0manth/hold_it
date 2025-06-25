@@ -32,6 +32,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
 
     public static final float defaultPower = 0.7f;
+
     public static final float distanceToProjectile = 3;
 
     public static float radius() {

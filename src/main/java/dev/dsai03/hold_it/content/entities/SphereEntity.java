@@ -34,11 +34,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+
 import java.util.ArrayList;
 
 public class SphereEntity extends Projectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
-    private static final int EXPLOSION_DELAY = 100;
     private boolean isStationary = false;
     public Vec3 targetPosition;
     private float lastPower = -1;
@@ -69,7 +69,9 @@ public class SphereEntity extends Projectile {
         if (!level().isClientSide) {
             if (isStationary) {
                 setDeltaMovement(Vec3.ZERO);
-                if (tickCount >= EXPLOSION_DELAY) {
+                float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower ;
+                int dynamicDelay = 100 + (int)(200 * powerFactor);
+                if (tickCount >= dynamicDelay) {
                     explode();
                     discard();
                 }
@@ -95,19 +97,13 @@ public class SphereEntity extends Projectile {
     private void explode() {
         if (level().isClientSide || getOwner() == null) return;
 
-        var targets = new ArrayList<SpellTarget>();
-        for (int i = -2; i <= 2; i++) {
-            for (int j = -2; j <= 2; j++) {
-                for (int k = -2; k <= 2; k++) {
-                    targets.add(new SpellTarget(BlockPos.containing(position().add(i, j, k)), null));
-                }
+        if (getOwner() instanceof SpellSevenShapeEntity parent) {
+            var targets = parent.target();
+            for (var target : targets) {
+                SpellSource source = new SpellSource(casterRef.get(), InteractionHand.MAIN_HAND);
+                SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
+                SpellUtils.cast(spellHolder.getSpell(), source, target, context);
             }
-        }
-
-        for (var target : targets) {
-            SpellSource source = new SpellSource(casterRef.get(), InteractionHand.MAIN_HAND);
-            SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
-            SpellUtils.cast(spellHolder.getSpell(), source, target, context);
         }
     }
 
