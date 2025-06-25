@@ -12,11 +12,13 @@ import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -70,7 +72,7 @@ public class SphereEntity extends Projectile {
             if (isStationary) {
                 setDeltaMovement(Vec3.ZERO);
                 float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower ;
-                int dynamicDelay = 100 + (int)(200 * powerFactor);
+                int dynamicDelay = 5 + (int)(300 * powerFactor);
                 if (tickCount >= dynamicDelay) {
                     explode();
                     discard();
@@ -95,15 +97,37 @@ public class SphereEntity extends Projectile {
     }
 
     private void explode() {
+
         if (level().isClientSide || getOwner() == null) return;
 
-        if (getOwner() instanceof SpellSevenShapeEntity parent) {
-            var targets = parent.target();
-            for (var target : targets) {
-                SpellSource source = new SpellSource(casterRef.get(), InteractionHand.MAIN_HAND);
-                SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
-                SpellUtils.cast(spellHolder.getSpell(), source, target, context);
+        var targets = new ArrayList<SpellTarget>();
+        float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower; // От 0 до 1
+        float dynamicRadius = 1 + (7 * powerFactor); // От 1 до 8
+
+        level().getEntities(getOwner(), this.getBoundingBox().inflate(dynamicRadius),
+                        (Entity e) -> e != this && e.position().distanceTo(this.position()) < dynamicRadius)
+                .stream().map(SpellTarget::new).forEach(targets::add);
+
+        for (int i = -Mth.ceil(dynamicRadius); i <= Mth.ceil(dynamicRadius); i++) {
+            for (int j = -1; j <= Mth.ceil(dynamicRadius); j++) {
+                for (int k = -Mth.ceil(dynamicRadius); k <= Mth.ceil(dynamicRadius); k++) {
+                    var pos = BlockPos.containing(this.position().add(i, j, k));
+                    if (pos.getCenter().distanceTo(this.position()) > dynamicRadius)
+                        continue;
+                    if (level().getBlockState(pos).isAir())
+                        continue;
+                    if (j == -1)
+                        targets.add(new SpellTarget(pos, Direction.UP));
+                    else
+                        targets.add(new SpellTarget(pos, null));
+                }
             }
+        }
+
+        for (var target : targets) {
+            SpellSource source = new SpellSource(casterRef.get(), InteractionHand.MAIN_HAND);
+            SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
+            SpellUtils.cast(spellHolder.getSpell(), source, target, context);
         }
     }
 
