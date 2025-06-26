@@ -98,7 +98,6 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
             projectile.setPower(power);
         } else {
             var proj = new BigBallEntity(level(), this);
-            proj.setOwner(getCaster());
             proj.setSpell(getSpell());
             proj.setPos(centerPos);
             proj.setPower(power);

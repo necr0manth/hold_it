@@ -21,5 +21,6 @@ public class AwesomeEntityRenderers {
 		EntityRenderers.register(AwesomeEntityTypes.SPHERE_ENTITY_TYPE.get(), EmptyEntityRenderer::new);
 		EntityRenderers.register(AwesomeEntityTypes.SEVEN_SHAPE.get(), EmptyEntityRenderer::new);
 		EntityRenderers.register(AwesomeEntityTypes.BIG_BALL_SPELL_SHAPE.get(), EmptyEntityRenderer::new);
+		EntityRenderers.register(AwesomeEntityTypes.BIG_BALL_ENTITY_TYPE.get(), EmptyEntityRenderer::new);
 	}
 }
