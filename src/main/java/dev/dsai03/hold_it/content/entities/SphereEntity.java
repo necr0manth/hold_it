@@ -59,6 +59,14 @@ public class SphereEntity extends Projectile {
         spellHolder.setSpell(owner.getSpell());
         setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
     }
+    public SphereEntity(Level level, BigBallSpellShapeEntity owner) {
+        this(AwesomeEntityTypes.SPHERE_ENTITY_TYPE.get(), level);
+        setOwner(owner);
+        casterRef.set(owner.getCaster());
+        spellHolder.setSpell(owner.getSpell());
+        setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
+    }
+
 
     public void setStationary() {
         this.isStationary = true;

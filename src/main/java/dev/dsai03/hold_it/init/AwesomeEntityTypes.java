@@ -18,6 +18,7 @@ public interface AwesomeEntityTypes {
 	RegistryObject<EntityType<BallEntity>> BALL_ENTITY_TYPE = register("ball", () -> EntityType.Builder.<BallEntity>of(BallEntity::new, MobCategory.MISC).fireImmune());
 	RegistryObject<EntityType<SpellSevenShapeEntity>> SEVEN_SHAPE = register("seven_shape", () -> EntityType.Builder.of(SpellSevenShapeEntity::new, MobCategory.MISC));
 	RegistryObject<EntityType<SphereEntity>> SPHERE_ENTITY_TYPE = register("sphere", () -> EntityType.Builder.of(SphereEntity::new, MobCategory.MISC));
+	RegistryObject<EntityType<BigBallSpellShapeEntity>> BIG_BALL_SPELL_SHAPE = register("big_ball_shape", () -> EntityType.Builder.of(BigBallSpellShapeEntity::new, MobCategory.MISC));
 
 	static <T extends Entity> RegistryObject<EntityType<T>> register(String name, Supplier<EntityType.Builder<T>> builderSupplier) {
 		return ENTITY_TYPES.register(name, () -> builderSupplier.get().build(MyAwesomeMnaAddon.MODID + ":" + name));
