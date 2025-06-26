@@ -41,7 +41,7 @@ public class SphereEntity extends Projectile {
     private Entity2EntityReference<LivingEntity> casterRef;
     private SpellHolder spellHolder;
 
-    private BallEntity.BallData renderBallData;
+    private BallData renderBallData;
     @OnlyIn(Dist.CLIENT)
     private ParticleBallFx.BallFxData fxData;
     @OnlyIn(Dist.CLIENT)
@@ -56,7 +56,7 @@ public class SphereEntity extends Projectile {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public BallEntity.BallData getRenderBallData() {
+    public BallData getRenderBallData() {
         if (isRemoved())
             return null;
         return renderBallData;

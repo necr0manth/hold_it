@@ -10,13 +10,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
-public class BigBallSpellShape extends BaseChargeableSpellShape<SpellSevenShapeEntity> {
+public class BigBallSpellShape extends BaseChargeableSpellShape<BigBallSpellShapeEntity> {
     public BigBallSpellShape(ResourceLocation guiIcon, AttributeValuePair... attributeValuePairs) {
         super(guiIcon, attributeValuePairs);
     }
 
     @Override
-    public SpellSevenShapeEntity createEntity(SpellSource source, Level level, ISpellDefinition recipe) {
+    public BigBallSpellShapeEntity createEntity(SpellSource source, Level level, ISpellDefinition recipe) {
         return new BigBallSpellShapeEntity(source.getCaster(), level, recipe);
     }
 

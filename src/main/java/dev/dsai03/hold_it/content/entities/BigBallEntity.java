@@ -34,9 +34,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.ArrayList;
 
 public class BigBallEntity extends ThrowableProjectile {
-    private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.BOOLEAN);
-    public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<CompoundTag> SPELL = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(BigBallEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
     @Getter
@@ -150,8 +152,8 @@ public class BigBallEntity extends ThrowableProjectile {
         this.entityData.define(POWER, 0.0f);
         this.entityData.define(ID, -1);
         this.entityData.define(THROWN, false);
-        spellHolder = SpellHolder.createAndDefine(entityData, "spell", BigBallEntity.class);
-        casterRef = Entity2EntityReference.createAndDefine("caster", this, BigBallEntity.class);
+        spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
+        casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
     }
 
 

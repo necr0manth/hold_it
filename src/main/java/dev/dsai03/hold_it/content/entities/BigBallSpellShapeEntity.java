@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Random;
 
 public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
-    private Entity2EntityReference<SphereEntity> sphereRef;
+    private static final Entity2EntityReference.DataAccessor BALL = new Entity2EntityReference.DataAccessor(BigBallSpellShapeEntity.class);
+    private Entity2EntityReference<BigBallEntity> ballRef;
     Random random = new Random();
-    private static final EntityDataAccessor<CompoundTag> BALL = SynchedEntityData.defineId(BigBallSpellShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
 
     public BigBallSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
@@ -62,19 +62,19 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        sphereRef = Entity2EntityReference.createAndDefine("big_ball", this, BigBallSpellShapeEntity.class);
+        ballRef = Entity2EntityReference.createAndDefine(BALL, "big_ball", this);
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        sphereRef.save(compound);
+        ballRef.save(compound);
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        sphereRef.load(compound);
+        ballRef.load(compound);
     }
 
     @Override
@@ -84,13 +84,13 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
             return;
 
         if (getCaster() == null || !getCaster().isUsingItem()) {
-            var projectile = sphereRef.get();
+            var projectile = ballRef.get();
             this.discard();
             return;
         }
 
         var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
-        var projectile = sphereRef.get();
+        var projectile = ballRef.get();
         float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
 
         if (projectile != null) {
@@ -102,7 +102,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
             proj.setPos(centerPos);
             proj.setPower(power);
             level().addFreshEntity(proj);
-            sphereRef.set(proj);
+            ballRef.set(proj);
         }
     }
 
@@ -144,7 +144,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
 
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
-        var sphere = sphereRef.get();
+        var sphere = ballRef.get();
         if (sphere == null) return targets;
 
         level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius()),
@@ -168,30 +168,15 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         }
         return targets;
     }
+
     public void applySpell() {
         if (level().isClientSide)
             return;
-        for (var ball : getBalls()) {
-            ball.shoot(ball.position().subtract(getCaster().getEyePosition()).normalize());
-        }
-    }
-    public List<BallEntity> getBalls() {
-        var tag = entityData.get(BALL);
-
-        var ans = new ArrayList<BallEntity>();
-        if (!tag.contains("ball"))
-            return ans;
-        for (var i : tag.getList("ball", Tag.TAG_INT_ARRAY)) {
-            ans.add((BallEntity) ((ServerLevel) level()).getEntity(NbtUtils.loadUUID(i)));
-        }
-        return ans;
+        var ball = ballRef.get();
+        ball.shoot(ball.position().subtract(getCaster().getEyePosition()).normalize());
     }
 
     @Override
     protected void onInterrupt() {
-        if (!level().isClientSide) {
-            var projectile = sphereRef.get();
-            this.discard();
-        }
     }
 }
