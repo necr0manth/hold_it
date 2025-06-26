@@ -1,6 +1,7 @@
 package dev.dsai03.hold_it.init.client;
 
 import dev.dsai03.hold_it.content.client.entity_renderers.BallEntityRenderer;
+import dev.dsai03.hold_it.content.client.entity_renderers.BigBallEntityRenderer;
 import dev.dsai03.hold_it.content.client.entity_renderers.EmptyEntityRenderer;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -21,6 +22,6 @@ public class AwesomeEntityRenderers {
 		EntityRenderers.register(AwesomeEntityTypes.SPHERE_ENTITY_TYPE.get(), EmptyEntityRenderer::new);
 		EntityRenderers.register(AwesomeEntityTypes.SEVEN_SHAPE.get(), EmptyEntityRenderer::new);
 		EntityRenderers.register(AwesomeEntityTypes.BIG_BALL_SPELL_SHAPE.get(), EmptyEntityRenderer::new);
-		EntityRenderers.register(AwesomeEntityTypes.BIG_BALL_ENTITY_TYPE.get(), EmptyEntityRenderer::new);
+		EntityRenderers.register(AwesomeEntityTypes.BIG_BALL_ENTITY_TYPE.get(), BigBallEntityRenderer::new);
 	}
 }
