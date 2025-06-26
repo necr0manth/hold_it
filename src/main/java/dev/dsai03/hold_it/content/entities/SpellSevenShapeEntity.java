@@ -104,19 +104,10 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void chargeTick() {
-        if (level().isClientSide) {
-            clientTick();
-        }
     }
 
     @Override
     protected void overChargeTick() {
-        if (level().isClientSide)
-            clientTick();
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private void clientTick() {
     }
 
     @Override
@@ -131,28 +122,6 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     @Override
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
-//        var sphere = sphereRef.get();
-//        if (sphere == null) return targets;
-//
-//        level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius()),
-//                        (Entity e) -> e != this && e != sphere && e.position().distanceTo(sphere.position()) < radius())
-//                .stream().map(SpellTarget::new).forEach(targets::add);
-//
-//        for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
-//            for (int j = -1; j <= Mth.ceil(radius()); j++) {
-//                for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
-//                    var pos = BlockPos.containing(sphere.position().add(i, j, k));
-//                    if (pos.getCenter().distanceTo(sphere.position()) > radius())
-//                        continue;
-//                    if (level().getBlockState(pos).isAir())
-//                        continue;
-//                    if (j == -1)
-//                        targets.add(new SpellTarget(pos, Direction.UP));
-//                    else
-//                        targets.add(new SpellTarget(pos, null));
-//                }
-//            }
-//        }
         return targets;
     }
 

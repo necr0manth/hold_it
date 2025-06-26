@@ -5,6 +5,7 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
+import dev.dsai03.hold_it.content.client.particles.ParticleBallFx;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
@@ -46,6 +47,27 @@ public class SphereEntity extends Projectile {
     private float lastPower = -1;
     private Entity2EntityReference<LivingEntity> casterRef;
     private SpellHolder spellHolder;
+
+    private BallEntity.BallData renderBallData;
+    @OnlyIn(Dist.CLIENT)
+    private ParticleBallFx.BallFxData fxData;
+    @OnlyIn(Dist.CLIENT)
+    ParticleBallFx fx;
+
+    @OnlyIn(Dist.CLIENT)
+    public ParticleBallFx.BallData getFxSphereData() {
+        var renderBallData = getRenderBallData();
+        if (renderBallData == null)
+            return null;
+        return renderBallData.toFxBallData();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public BallEntity.BallData getRenderBallData() {
+        if (isRemoved())
+            return null;
+        return renderBallData;
+    }
 
     public SphereEntity(EntityType<? extends SphereEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -141,12 +163,14 @@ public class SphereEntity extends Projectile {
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        var affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
-        if (affinity == null) return;
-        for (int i = 0; i < 100; i++)
-            ParticleUtils.addParticle(spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
-                    position().add(new Vec3(random.nextGaussian(), random.nextGaussian(), random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 1 / 3d))),
-                    Vec3.ZERO, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> new Vec3(xo, yo, zo), ParticleUtils.EMPTY_TICKER));
+        fxData = new ParticleBallFx.BallFxData(pt -> spellHolder.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spellHolder.getSpell()));
+        if (fx == null)
+            fx = new ParticleBallFx(() -> fxData, this::getFxSphereData);
+        fx.tick();
+    }
+
+    public LivingEntity getCaster() {
+        return casterRef.get();
     }
 
     public void setPower(float power) {
