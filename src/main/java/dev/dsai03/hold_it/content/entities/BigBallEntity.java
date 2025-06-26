@@ -78,7 +78,7 @@ public class BigBallEntity extends ThrowableProjectile {
     public void tick() {
         var caster = getCaster();
         if (caster != null && getOwner() != null) {
-            var ballData = getOwner().getBallData(entityData.get(ID), caster.getEyePosition(), caster.getLookAngle(), caster.yHeadRot * Mth.DEG_TO_RAD, 0);
+            var ballData = new BallData(getOwner().getEyePosition().add(getOwner().getLookAngle().scale(3)), 2);
             setPower(ballData.power());
             setPos(ballData.pos().subtract(0, ballData.power() / 2, 0));
         }
@@ -119,7 +119,7 @@ public class BigBallEntity extends ThrowableProjectile {
                 var partialTick = Minecraft.getInstance().getFrameTime();
                 var lookAngle = caster.getViewVector(partialTick);
                 var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ()));
-                renderBallData = getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD, partialTick / 20);
+//                renderBallData = getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD, partialTick / 20);
             }
         } else
             renderBallData = new BallData(new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0), entityData.get(POWER));
@@ -132,9 +132,10 @@ public class BigBallEntity extends ThrowableProjectile {
         return renderBallData;
     }
 
-    public AwesomeSpellShapeEntity getOwner() {
+
+    public BigBallSpellShapeEntity getOwner() {
         var superOwner = super.getOwner();
-        if (superOwner instanceof AwesomeSpellShapeEntity owner)
+        if (superOwner instanceof BigBallSpellShapeEntity owner)
             return owner;
         else if (superOwner == null)
             return null;
