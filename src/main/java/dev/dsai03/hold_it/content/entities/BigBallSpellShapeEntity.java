@@ -137,11 +137,6 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         return 0;
     }
 
-    @Override
-    protected void applySpell(float manaCost) {
-
-    }
-
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
         var sphere = ballRef.get();
@@ -169,7 +164,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         return targets;
     }
 
-    public void applySpell() {
+    public void applySpell(float manaCost) {
         if (level().isClientSide)
             return;
         var ball = ballRef.get();

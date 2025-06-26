@@ -78,7 +78,7 @@ public class BigBallEntity extends ThrowableProjectile {
     public void tick() {
         var caster = getCaster();
         if (caster != null && getOwner() != null) {
-            var ballData = new BallData(getOwner().getEyePosition().add(getOwner().getLookAngle().scale(3)), 2);
+            var ballData = new BallData(caster.getEyePosition().add(caster.getLookAngle().scale(3)), 2);
             setPower(ballData.power());
             setPos(ballData.pos().subtract(0, ballData.power() / 2, 0));
         }
@@ -117,9 +117,7 @@ public class BigBallEntity extends ThrowableProjectile {
                 renderBallData = null;
             else {
                 var partialTick = Minecraft.getInstance().getFrameTime();
-                var lookAngle = caster.getViewVector(partialTick);
-                var pos = new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ()));
-//                renderBallData = getOwner().getBallData(entityData.get(ID), pos, lookAngle, caster.yHeadRot * Mth.DEG_TO_RAD, partialTick / 20);
+                renderBallData = new BallData(new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ())).add(caster.getViewVector(partialTick).scale(3)), 2);
             }
         } else
             renderBallData = new BallData(new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0), entityData.get(POWER));
