@@ -12,6 +12,7 @@ import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -28,6 +29,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import java.util.Random;
 
 import java.util.ArrayList;
 
@@ -40,27 +42,6 @@ public class SphereEntity extends Projectile {
     private float lastPower = -1;
     private Entity2EntityReference<LivingEntity> casterRef;
     private SpellHolder spellHolder;
-
-    private BallData renderBallData;
-    @OnlyIn(Dist.CLIENT)
-    private ParticleBallFx.BallFxData fxData;
-    @OnlyIn(Dist.CLIENT)
-    ParticleBallFx fx;
-
-    @OnlyIn(Dist.CLIENT)
-    public ParticleBallFx.BallData getFxSphereData() {
-        var renderBallData = getRenderBallData();
-        if (renderBallData == null)
-            return null;
-        return renderBallData.toFxBallData();
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public BallData getRenderBallData() {
-        if (isRemoved())
-            return null;
-        return renderBallData;
-    }
 
     public SphereEntity(EntityType<? extends SphereEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -117,8 +98,8 @@ public class SphereEntity extends Projectile {
         if (level().isClientSide || getOwner() == null) return;
 
         var targets = new ArrayList<SpellTarget>();
-        float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower; // От 0 до 1
-        float dynamicRadius = 1 + (7 * powerFactor); // От 1 до 8
+        float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower;
+        float dynamicRadius = 1 + (7 * powerFactor);
 
         level().getEntities(getOwner(), this.getBoundingBox().inflate(dynamicRadius),
                         (Entity e) -> e != this && e.position().distanceTo(this.position()) < dynamicRadius)
@@ -149,10 +130,36 @@ public class SphereEntity extends Projectile {
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        fxData = new ParticleBallFx.BallFxData(pt -> spellHolder.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spellHolder.getSpell()));
-        if (fx == null)
-            fx = new ParticleBallFx(() -> fxData, this::getFxSphereData);
-        fx.tick();
+        var affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
+        if (affinity == null) return;
+
+        Random random = new Random();
+        float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower; 
+        float radius = 1 + (7 * powerFactor);
+        int particleCount = (int) (50 + 150 * powerFactor);
+
+        for (int i = 0; i < particleCount; i++) {
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double distance = radius * (0.5 + random.nextDouble() * 0.5);
+            double xOffset = distance * Math.cos(angle);
+            double yOffset = distance * (random.nextDouble() - 0.5);
+            double zOffset = distance * Math.sin(angle);
+            Vec3 spawnPos = position().add(xOffset, yOffset, zOffset);
+
+            Vec3 toCenter = position().subtract(spawnPos).normalize().scale(0.1);
+
+            double rotationSpeed = 0.05 + 0.1 * powerFactor;
+            Vec3 rotationAxis = new Vec3(-Math.sin(angle), 0, Math.cos(angle)).normalize();
+            Vec3 tangentialVelocity = rotationAxis.cross(toCenter.normalize()).scale(rotationSpeed);
+
+            Vec3 velocity = toCenter.add(tangentialVelocity);
+
+            ParticleUtils.addParticle(spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
+                    spawnPos,
+                    velocity,
+                    ParticleUtils.EMPTY_TICKER,
+                    ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER));
+        }
     }
 
     public LivingEntity getCaster() {
