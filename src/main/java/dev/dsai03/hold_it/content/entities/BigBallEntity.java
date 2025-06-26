@@ -33,12 +33,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 
-public class BallEntity extends ThrowableProjectile {
+public class BigBallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
-    private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(BallEntity.class);
-    private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(BallEntity.class);
+    public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
     @Getter
@@ -58,18 +56,17 @@ public class BallEntity extends ThrowableProjectile {
         return renderBallData.toFxBallData();
     }
 
-    public BallEntity(EntityType<? extends BallEntity> pEntityType, Level pLevel) {
+    public BigBallEntity(EntityType<? extends BigBallEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         setNoGravity(true);
         setInvulnerable(true);
     }
 
-    public BallEntity(Level level, AwesomeSpellShapeEntity owner, int id) {
-        this(AwesomeEntityTypes.BALL_ENTITY_TYPE.get(), level);
+    public BigBallEntity(Level level, BigBallSpellShapeEntity owner) {
+        this(AwesomeEntityTypes.BIG_BALL_ENTITY_TYPE.get(), level);
         setOwner(owner);
         casterRef.set(owner.getCaster());
         setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
-        entityData.set(ID, id);
     }
 
     public LivingEntity getCaster() {
@@ -153,8 +150,8 @@ public class BallEntity extends ThrowableProjectile {
         this.entityData.define(POWER, 0.0f);
         this.entityData.define(ID, -1);
         this.entityData.define(THROWN, false);
-        spellHolder = SpellHolder.createAndDefine(SPELL,entityData, "spell");
-        casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
+        spellHolder = SpellHolder.createAndDefine(entityData, "spell", BigBallEntity.class);
+        casterRef = Entity2EntityReference.createAndDefine("caster", this, BigBallEntity.class);
     }
 
 
@@ -243,5 +240,4 @@ public class BallEntity extends ThrowableProjectile {
         entityData.set(THROWN, true);
         shoot(dir.x, dir.y, dir.z, (float) (2 / (entityData.get(POWER) + 0.5)), 0);
     }
-
 }

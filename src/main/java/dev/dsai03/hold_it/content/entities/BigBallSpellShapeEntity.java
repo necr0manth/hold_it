@@ -7,6 +7,12 @@ import dev.dsai03.hold_it.util.Entity2EntityReference;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,8 +27,9 @@ import java.util.Random;
 
 public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     private Entity2EntityReference<SphereEntity> sphereRef;
-    private static final Entity2EntityReference.DataAccessor SPHERE = new Entity2EntityReference.DataAccessor(BigBallSpellShapeEntity.class);
     Random random = new Random();
+    private static final EntityDataAccessor<CompoundTag> BALL = SynchedEntityData.defineId(BigBallSpellShapeEntity.class, EntityDataSerializers.COMPOUND_TAG);
+
 
     public BigBallSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
         super(entityType, world);
@@ -55,7 +62,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        sphereRef = Entity2EntityReference.createAndDefine(SPHERE, "sphere", this);
+        sphereRef = Entity2EntityReference.createAndDefine("big_ball", this, BigBallSpellShapeEntity.class);
     }
 
     @Override
@@ -78,9 +85,6 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
 
         if (getCaster() == null || !getCaster().isUsingItem()) {
             var projectile = sphereRef.get();
-            if (projectile != null) {
-                projectile.setStationary();
-            }
             this.discard();
             return;
         }
@@ -91,9 +95,8 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
 
         if (projectile != null) {
             projectile.setPower(power);
-            projectile.targetPosition = centerPos;
         } else {
-            var proj = new SphereEntity(level(), this);
+            var proj = new BigBallEntity(level(), this);
             proj.setOwner(getCaster());
             proj.setSpell(getSpell());
             proj.setPos(centerPos);
@@ -165,14 +168,29 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         }
         return targets;
     }
+    public void applySpell() {
+        if (level().isClientSide)
+            return;
+        for (var ball : getBalls()) {
+            ball.shoot(ball.position().subtract(getCaster().getEyePosition()).normalize());
+        }
+    }
+    public List<BallEntity> getBalls() {
+        var tag = entityData.get(BALL);
+
+        var ans = new ArrayList<BallEntity>();
+        if (!tag.contains("ball"))
+            return ans;
+        for (var i : tag.getList("ball", Tag.TAG_INT_ARRAY)) {
+            ans.add((BallEntity) ((ServerLevel) level()).getEntity(NbtUtils.loadUUID(i)));
+        }
+        return ans;
+    }
 
     @Override
     protected void onInterrupt() {
         if (!level().isClientSide) {
             var projectile = sphereRef.get();
-            if (projectile != null) {
-                projectile.setStationary();
-            }
             this.discard();
         }
     }
