@@ -8,13 +8,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
-public class CoolShape extends BaseChargeableSpellShape {
+public class CoolShape extends BaseChargeableSpellShape<CoolShapeEntity> {
 	public CoolShape(ResourceLocation guiIcon, AttributeValuePair... attributeValuePairs) {
 		super(guiIcon, attributeValuePairs);
 	}
 
 	@Override
-	public Entity createEntity(SpellSource source, Level level, ISpellDefinition recipe) {
+	public CoolShapeEntity createEntity(SpellSource source, Level level, ISpellDefinition recipe) {
 		return new CoolShapeEntity(source.getCaster(), recipe, level);
 	}
 

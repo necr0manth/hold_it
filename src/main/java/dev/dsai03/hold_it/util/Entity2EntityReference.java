@@ -21,7 +21,6 @@ public class Entity2EntityReference<T extends Entity> {
     public final Entity entity;
     public final String name;
     private UUID uuid;
-    private final static Map<Class<? extends Entity>, DataAccessor> dataAccessorMap = new HashMap<>();
 
     @AllArgsConstructor
     public static class DataAccessor {
@@ -43,12 +42,8 @@ public class Entity2EntityReference<T extends Entity> {
         this.name = name;
     }
 
-    public <C extends Entity, E extends C> Entity2EntityReference(String name, E entity, Class<C> cls) {
-        this(dataAccessorMap.computeIfAbsent(cls, DataAccessor::new), name, entity);
-    }
-
-    public static <C extends Entity, E extends C, T extends Entity> Entity2EntityReference<T> createAndDefine(String name, E entity, Class<C> cls) {
-        var ref = new Entity2EntityReference<T>(name, entity, cls);
+    public static <T extends Entity> Entity2EntityReference<T> createAndDefine(DataAccessor dataAccessor, String name, Entity entity) {
+        var ref = new Entity2EntityReference<T>(dataAccessor, name, entity);
         ref.define();
         return ref;
     }

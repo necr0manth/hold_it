@@ -21,6 +21,7 @@ import java.util.Random;
 
 public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     private Entity2EntityReference<SphereEntity> sphereRef;
+    private static final Entity2EntityReference.DataAccessor SPHERE = new Entity2EntityReference.DataAccessor(BigBallSpellShapeEntity.class);
     Random random = new Random();
 
     public BigBallSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
@@ -54,7 +55,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        sphereRef = Entity2EntityReference.createAndDefine("sphere", this, BigBallSpellShapeEntity.class);
+        sphereRef = Entity2EntityReference.createAndDefine(SPHERE, "sphere", this);
     }
 
     @Override
@@ -129,6 +130,15 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
+    public float getManaCost() {
+        return 0;
+    }
+
+    @Override
+    protected void applySpell(float manaCost) {
+
+    }
+
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
         var sphere = sphereRef.get();

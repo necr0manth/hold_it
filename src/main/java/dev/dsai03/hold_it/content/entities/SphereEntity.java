@@ -5,11 +5,11 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
+import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.content.client.particles.ParticleBallFx;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
-import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
 import net.minecraft.core.BlockPos;
@@ -23,25 +23,18 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
 
 import java.util.ArrayList;
 
 public class SphereEntity extends Projectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
+    private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(SphereEntity.class);
+    private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(SphereEntity.class);
     private boolean isStationary = false;
     public Vec3 targetPosition;
     private float lastPower = -1;
@@ -101,8 +94,8 @@ public class SphereEntity extends Projectile {
         if (!level().isClientSide) {
             if (isStationary) {
                 setDeltaMovement(Vec3.ZERO);
-                float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower ;
-                int dynamicDelay = 5 + (int)(300 * powerFactor);
+                float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower;
+                int dynamicDelay = 5 + (int) (300 * powerFactor);
                 if (tickCount >= dynamicDelay) {
                     explode();
                     discard();
@@ -189,8 +182,8 @@ public class SphereEntity extends Projectile {
     @Override
     protected void defineSynchedData() {
         entityData.define(POWER, 0.0f);
-        spellHolder = SpellHolder.createAndDefine(entityData, "spell", SphereEntity.class);
-        casterRef = Entity2EntityReference.createAndDefine("caster", this, SphereEntity.class);
+        spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
+        casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
     }
 
     @Override

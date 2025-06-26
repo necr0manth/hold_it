@@ -3,21 +3,26 @@ package dev.dsai03.hold_it.content.entities;
 import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
 import com.mna.api.spells.base.ISpellDefinition;
+import com.mna.api.spells.targeting.SpellContext;
+import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.util.SpellUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -38,10 +43,6 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 
     public static float chargeTime() {
         return 2;
-    }
-
-    public static float maxChargeTime() {
-        return 10;
     }
 
     @Override
@@ -117,10 +118,13 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
         }
     }
 
+    public float getMaxManaCost() {
+        return 1000;
+    }
 
     @Override
     protected boolean isOverCharged() {
-        return getLifetime() >= maxChargeTime();
+        return false;
     }
 
     @Override
@@ -133,6 +137,15 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
+    public float getManaCost() {
+        return Math.min(1, getLifetime() / chargeTime()) * getMaxManaCost();
+    }
+
+    @Override
+    protected void applySpell(float manaCost) {
+        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), getManaCost(), false);
+    }
+
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
         level().getEntities(getCaster(), getCaster().getBoundingBox().inflate(radius()), (Entity e) -> e != this && e.position().distanceTo(getCaster().position()) < radius()).stream().map(SpellTarget::new).forEach(targets::add);
@@ -151,6 +164,7 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
                 }
             }
         }
+        Collections.shuffle(targets);
         return targets;
     }
 }

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Random;
 
 public class SpellSevenShapeEntity extends ChargeableSpellEntity {
+    private static final Entity2EntityReference.DataAccessor SPHERE = new Entity2EntityReference.DataAccessor(ChargeableSpellEntity.class);
     private Entity2EntityReference<SphereEntity> sphereRef;
     Random random = new Random();
 
@@ -42,10 +43,6 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
         return 7;
     }
 
-    public static float maxChargeTime() {
-        return 30;
-    }
-
     @Override
     protected boolean isCharged() {
         return getLifetime() > chargeTime();
@@ -54,7 +51,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        sphereRef = Entity2EntityReference.createAndDefine("sphere", this, SpellSevenShapeEntity.class);
+        sphereRef = Entity2EntityReference.createAndDefine(SPHERE, "sphere", this);
     }
 
     @Override
@@ -112,7 +109,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected boolean isOverCharged() {
-        return getLifetime() > maxChargeTime();
+        return false;
     }
 
     @Override
@@ -120,9 +117,12 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected List<SpellTarget> target() {
-        var targets = new ArrayList<SpellTarget>();
-        return targets;
+    public float getManaCost() {
+        return 0;
+    }
+
+    @Override
+    protected void applySpell(float manaCost) {
     }
 
     @Override

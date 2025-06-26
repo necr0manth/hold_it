@@ -1,7 +1,8 @@
 package dev.dsai03.hold_it.content.entities;
 
 import com.mna.api.spells.base.ISpellDefinition;
-import com.mna.api.spells.targeting.SpellTarget;
+import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
+import com.mna.items.sorcery.SpellBook;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -11,9 +12,11 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
@@ -21,7 +24,6 @@ import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
@@ -140,6 +142,19 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
             projectiles.add(proj);
         }
         saveBalls(projectiles);
+        getSpell().setManaCost(tickCount);
+        if (getCaster() instanceof ServerPlayer player) {
+            var hand = player.getUsedItemHand();
+            var item = player.getUseItem();
+            CompoundTag spellTag;
+            if (item.getItem() instanceof SpellBook book)
+                spellTag = book.getSpellCompound(item, player);
+            else
+                spellTag = item.getOrCreateTag();
+            getSpell().writeToNBT(spellTag);
+            player.setItemInHand(hand, item);
+//            player.getInventory().setChanged();
+        }
     }
 
     public BallEntity.BallData getBallData(int ball, Vec3 castPosition, Vec3 castVector, float castYRot, float partialTick) {
@@ -153,7 +168,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected boolean isOverCharged() {
-        return getLifetime() > 20;
+        return false;
     }
 
     @Override
@@ -161,15 +176,15 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected Collection<SpellTarget> target() {
-        return List.of();
+    public float getManaCost() {
+        return getCharge() / chargedBallPower() * getBaseSpellManaCost();
     }
 
-    public void applySpell() {
+    public void applySpell(float manaCost) {
         if (level().isClientSide)
             return;
         for (var ball : getBalls()) {
-            ball.shoot(ball.position().subtract(getCaster().getEyePosition()).normalize());
+            ball.shoot(ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize());
         }
     }
 

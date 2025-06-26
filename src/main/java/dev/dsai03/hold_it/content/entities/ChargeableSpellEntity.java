@@ -1,15 +1,13 @@
 package dev.dsai03.hold_it.content.entities;
 
-import com.mna.api.spells.ComponentApplicationResult;
+import com.mna.api.spells.adjusters.SpellAdjustingContext;
+import com.mna.api.spells.adjusters.SpellCastStage;
 import com.mna.api.spells.base.ISpellDefinition;
-import com.mna.api.spells.parts.SpellEffect;
-import com.mna.api.spells.targeting.SpellContext;
-import com.mna.api.spells.targeting.SpellSource;
-import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
-import com.mna.spells.SpellCaster;
+import com.mna.spells.crafting.SpellRecipe;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.SpellHolder;
+import dev.dsai03.hold_it.util.SpellUtils;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -17,7 +15,6 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -25,22 +22,38 @@ import net.minecraftforge.network.NetworkHooks;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.HashMap;
 
 public abstract class ChargeableSpellEntity extends Entity {
-    public static final EntityDataAccessor<Float> LIFETIME = SynchedEntityData.defineId(ChargeableSpellEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> LIFETIME = SynchedEntityData.defineId(ChargeableSpellEntity.class, EntityDataSerializers.FLOAT);
+    private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(ChargeableSpellEntity.class);
+    private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(ChargeableSpellEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
     @Getter
     private SpellHolder spellHolder;
     private boolean wasCharged = false;
+    private boolean overrideManaCost = true;
+    private boolean ranOutOfMana = false;
     private long firstTickTime = -1;
+
+    public void adjustSpell(SpellAdjustingContext context) {
+        if (overrideManaCost)
+            context.spell.setManaCost(getManaCost());
+    }
 
     public ChargeableSpellEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
         super(entityType, world);
         setNoGravity(true);
         setInvulnerable(true);
         refreshDimensions();
+    }
+
+    public float getBaseSpellManaCost() {
+        overrideManaCost = false;
+        if (getSpell() instanceof SpellRecipe recipe)
+            recipe.calculateManaCost();
+        SpellUtils.applyAdjusters(getSpell(), getCaster(), false, SpellCastStage.CALCULATING_MANA_COST);
+        overrideManaCost = true;
+        return getSpell().getManaCost();
     }
 
     @Override
@@ -98,8 +111,14 @@ public abstract class ChargeableSpellEntity extends Entity {
                             onCharged();
                         else
                             overChargeTick();
-                    } else
+                    } else {
+                        if (getCaster() instanceof Player player) {
+                            player.getCapability(PlayerMagicProvider.MAGIC).ifPresent(magic -> {
+                                magic.getCastingResource().addRegenerationModifier("chargeableSpell", -1);
+                            });
+                        }
                         chargeTick();
+                    }
                     wasCharged = isCharged;
                 }
             }
@@ -125,24 +144,16 @@ public abstract class ChargeableSpellEntity extends Entity {
 
     protected abstract void onCharged();
 
-    protected void applySpell() {
-        if (level().isClientSide())
-            return;
-        for (var target : target()) {
-            SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
-            SpellContext context = new SpellContext(this.level(), getSpell());
-            HashMap<SpellEffect, ComponentApplicationResult> results = SpellCaster.ApplyComponents(getSpell(), source, target, context);
-            if (getCaster() instanceof Player player) {
-                results.forEach((key, value) -> {
-                    if (value.is_success) {
-                        SpellCaster.addComponentRoteProgress(player, key);
-                    }
-                });
-            }
-        }
-    }
+    public abstract float getManaCost();
 
-    protected abstract Collection<SpellTarget> target();
+    protected abstract void applySpell(float manaCost);
+
+    protected void applySpell() {
+        overrideManaCost = true;
+        var manaCost = getManaCost();
+        SpellUtils.consumeMana(getCaster(), manaCost);
+        applySpell(manaCost);
+    }
 
     protected abstract void onInterrupt();
 
@@ -180,8 +191,8 @@ public abstract class ChargeableSpellEntity extends Entity {
 
     protected void defineSynchedData() {
         entityData.define(LIFETIME, 0f);
-        casterRef = Entity2EntityReference.createAndDefine("caster", this, ChargeableSpellEntity.class);
-        spellHolder = SpellHolder.createAndDefine(entityData, "spell", ChargeableSpellEntity.class);
+        casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
+        spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
     }
 
     public final int getOverrideColor() {

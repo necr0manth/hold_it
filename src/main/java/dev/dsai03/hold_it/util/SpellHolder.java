@@ -4,6 +4,7 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.spells.crafting.SpellRecipe;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
@@ -18,22 +19,11 @@ public class SpellHolder {
     private final SynchedEntityData entityData;
     private final EntityDataAccessor<CompoundTag> dataAccessor;
     private final String name;
-    private final static Map<Class<? extends Entity>, EntityDataAccessor<CompoundTag>> dataAccessorMap = new HashMap<>();
 
     public SpellHolder(SynchedEntityData entityData, String name, EntityDataAccessor<CompoundTag> dataAccessor) {
         this.entityData = entityData;
         this.dataAccessor = dataAccessor;
         this.name = name;
-    }
-
-    public <C extends Entity> SpellHolder(SynchedEntityData entityData, String name, Class<C> cls) {
-        this(entityData, name, dataAccessorMap.computeIfAbsent(cls, cl -> SynchedEntityData.defineId(cl, EntityDataSerializers.COMPOUND_TAG)));
-    }
-
-    public static <C extends Entity> SpellHolder createAndDefine(SynchedEntityData entityData, String name, Class<C> cls) {
-        var spellHolder = new SpellHolder(entityData, name, cls);
-        spellHolder.define();
-        return spellHolder;
     }
 
     public ISpellDefinition getSpell() {
@@ -65,5 +55,15 @@ public class SpellHolder {
 
     public void load(CompoundTag tag) {
         entityData.set(dataAccessor, tag.getCompound(name));
+    }
+
+    public static SpellHolder createAndDefine(EntityDataAccessor<CompoundTag> dataAccessor, SynchedEntityData entityData, String name){
+        var holder = new SpellHolder(entityData, name, dataAccessor);
+        holder.define();
+        return holder;
+    }
+
+    public static EntityDataAccessor<CompoundTag> createDataAccessor(Class<? extends Entity> cls){
+        return SynchedEntityData.defineId(cls, EntityDataSerializers.COMPOUND_TAG);
     }
 }

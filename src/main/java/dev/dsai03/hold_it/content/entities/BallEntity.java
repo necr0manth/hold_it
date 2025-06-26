@@ -36,7 +36,9 @@ import java.util.ArrayList;
 public class BallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.BOOLEAN);
-    public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BallEntity.class, EntityDataSerializers.INT);
+    private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(BallEntity.class);
+    private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(BallEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
     @Getter
@@ -151,8 +153,8 @@ public class BallEntity extends ThrowableProjectile {
         this.entityData.define(POWER, 0.0f);
         this.entityData.define(ID, -1);
         this.entityData.define(THROWN, false);
-        spellHolder = SpellHolder.createAndDefine(entityData, "spell", BallEntity.class);
-        casterRef = Entity2EntityReference.createAndDefine("caster", this, BallEntity.class);
+        spellHolder = SpellHolder.createAndDefine(SPELL,entityData, "spell");
+        casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
     }
 
 
