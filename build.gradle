@@ -11,7 +11,7 @@ base {
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-minecraft {
+minecraft { //edd23e23
     mappings channel: mapping_channel, version: mapping_version
     copyIdeResources = true
     runs {
