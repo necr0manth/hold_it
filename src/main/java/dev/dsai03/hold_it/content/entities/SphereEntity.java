@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
@@ -131,34 +132,121 @@ public class SphereEntity extends Projectile {
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
         var affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
-        if (affinity == null) return;
-
         Random random = new Random();
-        float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower; 
-        float radius = 1 + (7 * powerFactor);
-        int particleCount = (int) (50 + 150 * powerFactor);
+        float powerFactor = Math.max(0.01f, getPower() / SpellSevenShapeEntity.defaultPower);
+        float coreRadius = 0.05f + 0.95f * powerFactor;
+
+        final int spiralArms = 3;
+        final double spiralTightness = 2.5;
+        final double spiralThickness = 0.3;
+
+        // Определяем количество частиц
+        int particleCount;
+        if (isStationary) {
+            particleCount = (int) (8 + 15 * powerFactor);
+        } else {
+            particleCount = (int) (30 + 70 * powerFactor);
+        }
 
         for (int i = 0; i < particleCount; i++) {
-            double angle = random.nextDouble() * 2 * Math.PI;
-            double distance = radius * (0.5 + random.nextDouble() * 0.5);
-            double xOffset = distance * Math.cos(angle);
-            double yOffset = distance * (random.nextDouble() - 0.5);
-            double zOffset = distance * Math.sin(angle);
-            Vec3 spawnPos = position().add(xOffset, yOffset, zOffset);
+            if (isStationary) {
+                double angle = random.nextDouble() * Math.PI * 2;
+                double distance = coreRadius * 1.5 + random.nextDouble() * coreRadius * 2;
 
-            Vec3 toCenter = position().subtract(spawnPos).normalize().scale(0.1);
+                Vec3 diskPos = position().add(
+                        distance * Math.cos(angle),
+                        (random.nextDouble() - 0.5) * coreRadius * 0.3,
+                        distance * Math.sin(angle)
+                );
 
-            double rotationSpeed = 0.05 + 0.1 * powerFactor;
-            Vec3 rotationAxis = new Vec3(-Math.sin(angle), 0, Math.cos(angle)).normalize();
-            Vec3 tangentialVelocity = rotationAxis.cross(toCenter.normalize()).scale(rotationSpeed);
+                Vec3 tangent = new Vec3(-diskPos.z + position().z, 0, diskPos.x - position().x).normalize();
+                Vec3 velocity = tangent.scale(0.05 + 0.1 * powerFactor);
 
-            Vec3 velocity = toCenter.add(tangentialVelocity);
+                ParticleUtils.addParticle(
+                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)),
+                                getOwner()
+                        ), diskPos, velocity, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER));
+            } else {
+                int armIndex = random.nextInt(spiralArms);
+                double armPhase = armIndex * (2 * Math.PI / spiralArms);
 
-            ParticleUtils.addParticle(spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
-                    spawnPos,
-                    velocity,
-                    ParticleUtils.EMPTY_TICKER,
-                    ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER));
+                double spiralProgress = random.nextDouble();
+                double distance = 0.5 + 5.0 * spiralProgress;
+                double angle = armPhase + spiralTightness * spiralProgress * Math.PI * 2;
+
+                double radialOffset = (random.nextDouble() - 0.5) * spiralThickness;
+                double verticalOffset = (random.nextDouble() - 0.5) * coreRadius * 0.5;
+
+                Vec3 spiralPos = position().add(
+                        (distance + radialOffset) * Math.cos(angle),
+                        verticalOffset,
+                        (distance + radialOffset) * Math.sin(angle)
+                );
+
+                Vec3 toCenter = position().subtract(spiralPos).normalize().scale(0.15);
+
+                Vec3 tangent = new Vec3(-spiralPos.z + position().z, 0, spiralPos.x - position().x).normalize();
+                Vec3 rotation = tangent.scale(0.08 * (1 + spiralProgress));
+
+                Vec3 velocity = toCenter.add(rotation);
+
+                ParticleUtils.addParticle(
+                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)),
+                                getOwner()
+                        ), spiralPos, velocity, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER));
+            }
+
+            if (random.nextFloat() < 0.3f) {
+                double theta = random.nextDouble() * Math.PI;
+                double phi = random.nextDouble() * Math.PI * 2;
+                double r = coreRadius * (0.95 + 0.1 * random.nextDouble());
+
+                Vec3 surfacePos = position().add(
+                        r * Math.sin(theta) * Math.cos(phi),
+                        r * Math.cos(theta),
+                        r * Math.sin(theta) * Math.sin(phi)
+                );
+
+                Vec3 velocity = position().subtract(surfacePos).normalize()
+                        .scale(0.02 + 0.03 * random.nextDouble());
+
+                ParticleUtils.addParticle(
+                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)),
+                                getOwner()
+                        ), surfacePos, velocity, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER));
+            }
+        }
+
+        if (tickCount % 3 == 0) {
+            ParticleUtils.addParticle(
+                    spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)),
+                            getOwner()
+                    ), position(), Vec3.ZERO, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER));
+
+            if (coreRadius > 0.3f) {
+                int rings = 1 + (int)(coreRadius * 2);
+                for (int r = 0; r < rings; r++) {
+                    double ringRadius = coreRadius * 1.5 + r * 0.15;
+                    int particlesInRing = 8 + r * 2;
+
+                    for (int i = 0; i < particlesInRing; i++) {
+                        double angle = i * (Math.PI * 2 / particlesInRing);
+                        Vec3 ringPos = position().add(
+                                ringRadius * Math.cos(angle),
+                                (random.nextDouble() - 0.5) * 0.1,
+                                ringRadius * Math.sin(angle)
+                        );
+
+                        Vec3 tangent = new Vec3(-ringPos.z + position().z, 0, ringPos.x - position().x).normalize();
+                        Vec3 velocity = tangent.scale(0.01);
+
+                        ParticleUtils.addParticle(
+                                spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)),
+                                        getOwner()
+                                ), ringPos, velocity, ParticleUtils.EMPTY_TICKER, ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER));
+                    }
+                }
+            }
         }
     }
 
