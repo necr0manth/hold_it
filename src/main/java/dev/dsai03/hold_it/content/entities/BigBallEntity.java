@@ -140,6 +140,7 @@ public class BigBallEntity extends ThrowableProjectile {
         throw new RuntimeException("0_o");
     }
 
+
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         var power = entityData.get(POWER);
