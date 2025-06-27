@@ -92,7 +92,6 @@ public class ParticleUtils {
 
     @SubscribeEvent
     public static void renderTick(TickEvent.RenderTickEvent event) {
-//        System.out.println("renderTick "+System.currentTimeMillis());
         for (var list : ((ParticleEngineAccessor) Minecraft.getInstance().particleEngine).getParticles().values()) {
             for (var particle : list) {
                 if (renderTickers.containsKey(particle)) {
