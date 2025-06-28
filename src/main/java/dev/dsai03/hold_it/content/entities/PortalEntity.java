@@ -95,7 +95,7 @@ public class PortalEntity extends Entity {
         // Случайное направление для меча
         double angle = random.nextDouble() * Math.PI * 2;
         double pitch = (random.nextDouble() - 0.5) * Math.PI * 0.5; // Небольшой разброс по вертикали
-        Vec3 direction = portal.getCaster().getLookAngle();
+        Vec3 direction = getCaster().getLookAngle();
 
         sword.shoot(direction);
         level().addFreshEntity(sword);
