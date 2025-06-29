@@ -46,18 +46,12 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected boolean isCharged() {
+    public boolean isPrepared() {
         return getLifetime() > chargeTime();
     }
 
     @Override
-    protected void chargeTick() {
-        if (level().isClientSide)
-            clientTick();
-    }
-
-    @Override
-    protected void overChargeTick() {
+    protected void spellTick() {
         if (level().isClientSide)
             clientTick();
     }
@@ -123,26 +117,15 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected boolean isOverCharged() {
-        return false;
+    protected void onInterrupt(InterruptReason reason) {
     }
-
     @Override
-    protected void onInterrupt() {
-    }
-
-    @Override
-    protected void onCharged() {
-
-    }
-
-    @Override
-    public float getManaCost() {
+    public float getRequestedManaCost() {
         return Math.min(1, getLifetime() / chargeTime()) * getMaxManaCost();
     }
 
     @Override
-    protected void applySpell(float manaCost) {
+    protected void applySpell(float manaCost, float casterMana) {
         SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), getManaCost(), false);
     }
 

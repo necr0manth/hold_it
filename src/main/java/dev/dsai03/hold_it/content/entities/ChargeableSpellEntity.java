@@ -18,10 +18,13 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.NetworkHooks;
-import org.apache.commons.lang3.mutable.MutableInt;
 
 import javax.annotation.Nullable;
+import java.util.Optional;
 
 public abstract class ChargeableSpellEntity extends Entity {
     private static final EntityDataAccessor<Float> LIFETIME = SynchedEntityData.defineId(ChargeableSpellEntity.class, EntityDataSerializers.FLOAT);
@@ -30,14 +33,51 @@ public abstract class ChargeableSpellEntity extends Entity {
     private Entity2EntityReference<LivingEntity> casterRef;
     @Getter
     private SpellHolder spellHolder;
-    private boolean wasCharged = false;
+    @Getter
+    private boolean spellCasted = false;
     private boolean overrideManaCost = true;
-    private boolean ranOutOfMana = false;
     private long firstTickTime = -1;
+    private final EventListener eventListener = new EventListener();
+
+    public enum InterruptReason {
+        NOT_PREPARED,
+        INVALID_RECIPE,
+        DEAD_CASTER,
+        NOT_ENOUGH_MANA,
+        INVALID_CASTER,
+        OTHER
+    }
+
+    private class EventListener {
+        @SubscribeEvent
+        public void onStopUsingItem(LivingEntityUseItemEvent.Stop event) {
+            if (!level().isClientSide && event.getEntity() == getCaster()) {
+                if (isPrepared())
+                    if (allowCastWhenNotEnoughMana() || casterHasEnoughMana())
+                        applySpell();
+                    else
+                        onInterrupt(InterruptReason.NOT_ENOUGH_MANA);
+                else
+                    onInterrupt(InterruptReason.NOT_PREPARED);
+            }
+        }
+    }
+
+    public boolean casterHasEnoughMana() {
+        var manaCost = getRequestedManaCost();
+        boolean[] ans = new boolean[1];
+        Optional.ofNullable(getCaster()).ifPresent(
+                caster -> caster.getCapability(PlayerMagicProvider.MAGIC).ifPresent(
+                        magic -> {
+                            if (magic.getCastingResource().hasEnough(caster, manaCost))
+                                ans[0] = true;
+                        }));
+        return ans[0];
+    }
 
     public void adjustSpell(SpellAdjustingContext context) {
         if (overrideManaCost)
-            context.spell.setManaCost(getManaCost());
+            context.spell.setManaCost(getRequestedManaCost());
     }
 
     public ChargeableSpellEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
@@ -45,6 +85,13 @@ public abstract class ChargeableSpellEntity extends Entity {
         setNoGravity(true);
         setInvulnerable(true);
         refreshDimensions();
+        MinecraftForge.EVENT_BUS.register(eventListener);
+    }
+
+    @Override
+    public void remove(RemovalReason pReason) {
+        super.remove(pReason);
+        MinecraftForge.EVENT_BUS.unregister(eventListener);
     }
 
     public float getBaseSpellManaCost() {
@@ -86,10 +133,6 @@ public abstract class ChargeableSpellEntity extends Entity {
         if (getCaster() != null)
             setPos(getCaster().position());
         if (!level().isClientSide) {
-            if (getCaster() == null) {
-                discard();
-                return;
-            }
             if (firstTickTime == -1) {
                 firstTickTime = System.nanoTime();
             }
@@ -97,66 +140,107 @@ public abstract class ChargeableSpellEntity extends Entity {
         }
         LivingEntity caster = getCaster();
         ISpellDefinition recipe = getSpell();
-        if (caster != null && caster.isAlive() && caster.level().dimension().equals(level().dimension()) && caster.getUseItemRemainingTicks() > 0) {
-            if (isOverCharged() && !level().isClientSide) {
-                applySpell();
-                stopCast();
-            } else {
-                if (!level().isClientSide() && !recipe.isValid()) {
-                    stopCast();
-                } else {
-                    boolean isCharged = isCharged();
-                    if (isCharged) {
-                        if (!wasCharged)
-                            onCharged();
-                        else
-                            overChargeTick();
-                    } else {
-                        if (getCaster() instanceof Player player) {
-                            player.getCapability(PlayerMagicProvider.MAGIC).ifPresent(magic -> {
-                                magic.getCastingResource().addRegenerationModifier("chargeableSpell", -1);
-                            });
-                        }
-                        chargeTick();
-                    }
-                    wasCharged = isCharged;
-                }
+        if(spellCasted)
+            return;
+        if(!level().isClientSide){
+            if(caster == null) {
+                interrupt(InterruptReason.OTHER);
+                return;
             }
-        } else {
-            if (!level().isClientSide) {
-                if (isCharged())
-                    applySpell();
-                else {
-                    onInterrupt();
-                }
-                stopCast();
+            if (!recipe.isValid()) {
+                interrupt(InterruptReason.INVALID_RECIPE);
+                return;
+            }
+            if (!caster.isAlive()) {
+                interrupt(InterruptReason.DEAD_CASTER);
+                return;
+            }
+            if (!caster.level().dimension().equals(level().dimension()) || caster.getUseItemRemainingTicks() <= 0) {
+                interrupt(InterruptReason.INVALID_CASTER);
+                return;
+            }
+            if (getCaster() instanceof Player player) {
+                player.getCapability(PlayerMagicProvider.MAGIC).ifPresent(magic -> {
+                    magic.getCastingResource().addRegenerationModifier("chargeableSpell", -1);
+                });
             }
         }
+        spellTick();
     }
 
-    protected abstract boolean isCharged();
-
-    protected abstract void chargeTick();
-
-    protected abstract void overChargeTick();
-
-    protected abstract boolean isOverCharged();
-
-    protected abstract void onCharged();
-
-    public abstract float getManaCost();
-
-    protected abstract void applySpell(float manaCost);
-
-    protected void applySpell() {
-        overrideManaCost = true;
-        var manaCost = getManaCost();
-        SpellUtils.consumeMana(getCaster(), manaCost);
-        applySpell(manaCost);
+    public void interrupt(InterruptReason reason) {
+        onInterrupt(reason);
+        stopCast();
     }
 
-    protected abstract void onInterrupt();
+    /**
+     * Определяет можно ли кастовать спелл. Если спелл можно кастовать сразу без длительного удержания, то пусть просто всегда возвращает true
+     */
+    public boolean isPrepared() {
+        return true;
+    }
 
+    /**
+     * Вызывается внутри обычного тика при условии, что спелл валиден и всё ок
+     */
+    protected abstract void spellTick();
+
+    /**
+     * Разрешаем ли мы кастовать спелл при недостаточном количестве маны
+     */
+    public boolean allowCastWhenNotEnoughMana() {
+        return false;
+    }
+
+    /**
+     * Сколько маны мы запрашиваем у игрока (отображется в мана баре и потребляется при касте)
+     */
+    public abstract float getRequestedManaCost();
+
+    /**
+     * Если можем кастовать при недостаточной мане, то минимум из маны игрока и требуемой мане (т.е. сколько маны будет по факту потрачено)
+     * Если нельзя кастовать при недостаточной мане, то просто требуемая мана
+     */
+    public float getManaCost() {
+        if (allowCastWhenNotEnoughMana())
+            return Math.min(getRequestedManaCost(), getCasterMana());
+        return getRequestedManaCost();
+    }
+
+    protected abstract void applySpell(float requestedManaCost, float casterMana);
+
+    public float getCasterMana() {
+        float[] ans = new float[1];
+        Optional.ofNullable(getCaster()).ifPresent(
+                caster -> caster.getCapability(PlayerMagicProvider.MAGIC).ifPresent(
+                        magic -> {
+                            ans[0] = magic.getCastingResource().getAmount();
+                        }));
+        return ans[0];
+    }
+
+    protected void applySpell() {var manaCost = getRequestedManaCost();
+        Optional.ofNullable(getCaster()).ifPresent(
+                caster -> caster.getCapability(PlayerMagicProvider.MAGIC).ifPresent(
+                        magic -> {
+                            applySpell(manaCost, magic.getCastingResource().getAmount());
+                            SpellUtils.consumeMana(getCaster(), manaCost);
+                            spellCasted = true;
+                        }));
+        if (!spellCasted) {
+            onInterrupt(InterruptReason.INVALID_CASTER);
+            spellCasted = true;
+        }
+        discard();
+    }
+
+    public void applySpellAndStopCast() {
+        applySpell();
+        stopCast();
+    }
+
+    protected void onInterrupt(InterruptReason reason) {
+    }
 
     public float getLifetime() {
         return entityData.get(LIFETIME);
@@ -193,27 +277,6 @@ public abstract class ChargeableSpellEntity extends Entity {
         entityData.define(LIFETIME, 0f);
         casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
         spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
-    }
-
-    public final int getOverrideColor() {
-        LivingEntity caster = getCaster();
-        ISpellDefinition recipe = getSpell();
-        if (caster != null && recipe != null) {
-            MutableInt color = new MutableInt(-1);
-            if (caster instanceof Player) {
-                caster.getCapability(PlayerMagicProvider.MAGIC).ifPresent((m) -> {
-                    color.setValue(m.getParticleColorOverride());
-                });
-            }
-
-            if (color.getValue() == -1) {
-                color.setValue(recipe.getParticleColorOverride());
-            }
-
-            return color.getValue();
-        } else {
-            return -1;
-        }
     }
 
     @Override
