@@ -8,8 +8,6 @@ cache:
   paths:
     - .gradle/
     - build/
-    - ~/.gradle/wrapper/
-    - ~/.gradle/caches/
 
 stages:
   - build
@@ -17,7 +15,6 @@ stages:
 build:
   stage: build
   script:
-    - chmod +x ./gradlew
     - ./gradlew build --no-daemon
   artifacts:
     paths:
