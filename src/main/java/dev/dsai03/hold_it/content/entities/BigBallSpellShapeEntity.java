@@ -56,8 +56,8 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected boolean isCharged() {
-        return getLifetime() > chargeTime();
+    public boolean isPrepared() {
+        return true;
     }
 
     @Override
@@ -107,16 +107,10 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected void chargeTick() {
+    protected void spellTick() {
         if (level().isClientSide) {
             clientTick();
         }
-    }
-
-    @Override
-    protected void overChargeTick() {
-        if (level().isClientSide)
-            clientTick();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -124,16 +118,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected boolean isOverCharged() {
-        return getLifetime() > maxChargeTime();
-    }
-
-    @Override
-    protected void onCharged() {
-    }
-
-    @Override
-    public float getManaCost() {
+    public float getRequestedManaCost() {
         return 0;
     }
 
@@ -164,7 +149,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         return targets;
     }
 
-    public void applySpell(float manaCost) {
+    public void applySpell(float manaCost, float casterMana) {
         if (level().isClientSide)
             return;
         var ball = ballRef.get();
@@ -172,6 +157,6 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected void onInterrupt() {
+    protected void onInterrupt(InterruptReason reason) {
     }
 }
