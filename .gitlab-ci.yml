@@ -1,11 +1,24 @@
-image: gradle:8-jdk17
+image: openjdk:17
+
+variables:
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+
+cache:
+  key: "gradle"
+  paths:
+    - .gradle/
+    - build/
+    - ~/.gradle/wrapper/
+    - ~/.gradle/caches/
+
 stages:
   - build
 
 build:
   stage: build
   script:
-    - ./gradlew clean build --no-daemon
+    - chmod +x ./gradlew
+    - ./gradlew build --no-daemon
   artifacts:
     paths:
       - build/libs/*.jar
