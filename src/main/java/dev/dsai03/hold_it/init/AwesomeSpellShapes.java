@@ -6,6 +6,7 @@ import dev.dsai03.hold_it.MyAwesomeMnaAddon;
 import dev.dsai03.hold_it.content.spells.shapes.AwesomeSpellShape;
 import dev.dsai03.hold_it.content.spells.shapes.BigBallSpellShape;
 import dev.dsai03.hold_it.content.spells.shapes.CoolShape;
+import dev.dsai03.hold_it.content.spells.shapes.PortalSwordShape;
 import dev.dsai03.hold_it.content.spells.shapes.SpellSevenShape;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.DeferredRegister;
@@ -18,4 +19,5 @@ public interface AwesomeSpellShapes {
 	RegistryObject<AwesomeSpellShape> AWESOME_SHAPE = SHAPES.register("awesome_shape", () -> new AwesomeSpellShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shapes/awesome_shape.png")));
 	RegistryObject<SpellSevenShape> SEVEN_SHAPE = SHAPES.register("seven_shape", () -> new SpellSevenShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shapes/seven_shape.png")));
 	RegistryObject<BigBallSpellShape> BIG_BALL_SPELL_SHAPE = SHAPES.register("big_ball_shape", () -> new BigBallSpellShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shapes/seven_shape.png")));
+	RegistryObject<PortalSwordShape> PORTAL_SWORD_SHAPE = SHAPES.register("portal_sword_shape", () -> new PortalSwordShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shapes/portal_sword_shape.png")));
 }
