@@ -39,26 +39,6 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
         return 15.0f; // Максимум 15 секунд зарядки
     }
 
-    @Override
-    protected boolean isCharged() {
-        return getLifetime() > chargeTime();
-    }
-
-    @Override
-    protected boolean isOverCharged() {
-        return getLifetime() > maxChargeTime();
-    }
-
-    @Override
-    protected void chargeTick() {
-        if (getLifetime() >= maxChargeTime()) return;
-        portalSpawnDelay++;
-        if (portalSpawnDelay >= PORTAL_SPAWN_INTERVAL && portals.size() < MAX_PORTALS) {
-            spawnPortal();
-            portalSpawnDelay = 0;
-        }
-    }
-
     private void spawnPortal() {
         if (level().isClientSide) return;
         if (getCaster() == null) return;
@@ -73,7 +53,7 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
         } while (offset.length() < 2.5 && attempts < 10);
         Vec3 portalPos = getCaster().position().add(offset);
         float portalSize = 1.0f + (getLifetime() / chargeTime()) * 0.5f;
-        int swordCount = Math.min(10, 3 + (int)((getLifetime() / chargeTime()) * 4));
+        int swordCount = Math.min(10, 3 + (int) ((getLifetime() / chargeTime()) * 4));
         PortalEntity portal = new PortalEntity(level(), getCaster(), getSpell(), portalPos, portalSize, swordCount);
         level().addFreshEntity(portal);
         portals.add(portal);
@@ -81,17 +61,7 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected void overChargeTick() {
-        // Не спавним порталы при перезаряде
-    }
-
-    @Override
-    protected void onCharged() {
-        setCanLaunch(true);
-    }
-
-    @Override
-    protected void onInterrupt() {
+    protected void onInterrupt(InterruptReason reason) {
         for (PortalEntity portal : portals) {
             if (portal != null && portal.isAlive()) portal.discard();
         }
@@ -104,8 +74,8 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected void applySpell(float manaCost) {
-        // Заклинание применяется через порталы и мечи
+    protected void applySpell(float requestedManaCost, float casterMana) {
+
     }
 
     @Override
@@ -114,6 +84,23 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
         if (tickCount % 20 == 0) {
             System.out.println("[DEBUG] lifetime=" + getLifetime());
         }
+    }
+
+    @Override
+    protected void spellTick() {
+        if (getLifetime() >= maxChargeTime()) return;
+        if (getLifetime() >= chargeTime())
+            setCanLaunch(true);
+        portalSpawnDelay++;
+        if (portalSpawnDelay >= PORTAL_SPAWN_INTERVAL && portals.size() < MAX_PORTALS) {
+            spawnPortal();
+            portalSpawnDelay = 0;
+        }
+    }
+
+    @Override
+    public float getRequestedManaCost() {
+        return 0;
     }
 
     public void setCanLaunch(boolean value) {
