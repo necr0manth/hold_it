@@ -24,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.Comparator;
 import java.util.Random;
 
 public class PortalEntity extends Entity {
@@ -38,6 +39,8 @@ public class PortalEntity extends Entity {
     private Random random = new Random();
     private int launchDelay = 0;
     private static final int LAUNCH_INTERVAL = 20; // 1 секунда между запусками мечей
+    public boolean canLaunch = false;
+    private static final int MAX_PORTALS = 4;
 
     public PortalEntity(EntityType<? extends PortalEntity> entityType, Level level) {
         super(entityType, level);
@@ -45,8 +48,22 @@ public class PortalEntity extends Entity {
         setInvulnerable(true);
     }
 
+    public static int getActivePortalCount(Level level, LivingEntity caster) {
+        return (int) level.getEntitiesOfClass(PortalEntity.class, caster.getBoundingBox().inflate(32),
+            e -> e.getCaster() != null && e.getCaster().equals(caster)).size();
+    }
+
     public PortalEntity(Level level, LivingEntity caster, ISpellDefinition spell, Vec3 position, float size, int swordCount) {
         this(AwesomeEntityTypes.PORTAL_ENTITY_TYPE.get(), level);
+        if (getActivePortalCount(level, caster) >= MAX_PORTALS) {
+            discard();
+            return;
+        }
+        if (position.distanceTo(caster.position()) < 3.0) {
+            discard();
+            return;
+        }
+        System.out.println("[DEBUG] PortalEntity создан: pos=" + position + ", size=" + size + ", swords=" + swordCount);
         casterRef.set(caster);
         spellHolder.setSpell(spell);
         setPos(position);
@@ -71,36 +88,37 @@ public class PortalEntity extends Entity {
             return;
         }
 
-        // Логика запуска мечей
         if (getSwordsLaunched() < getSwordCount()) {
+            if (!canLaunch) return;
             launchDelay++;
             if (launchDelay >= LAUNCH_INTERVAL) {
                 launchSword();
                 launchDelay = 0;
             }
         } else {
-            // Все мечи запущены, удаляем портал
             discard();
         }
     }
 
     private void launchSword() {
-        if (level().isClientSide) return;
-        
-        // Создаем меч
         SwordEntity sword = new SwordEntity(level(), this);
         sword.setPos(position());
         sword.setPower(getSize() * 0.5f);
-        
-        // Случайное направление для меча
-        double angle = random.nextDouble() * Math.PI * 2;
-        double pitch = (random.nextDouble() - 0.5) * Math.PI * 0.5; // Небольшой разброс по вертикали
-        Vec3 direction = portal.getCaster().getLookAngle();
-
-        sword.shoot(direction);
+        if (getCaster() != null) {
+            LivingEntity target = findNearestTarget();
+            if (target != null) {
+                sword.setTarget(target);
+            }
+            sword.shoot(getCaster().getLookAngle());
+        }
         level().addFreshEntity(sword);
-        
         setSwordsLaunched(getSwordsLaunched() + 1);
+    }
+
+    private LivingEntity findNearestTarget() {
+        return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(16),
+                e -> !e.isAlliedTo(getCaster()) && e.isAlive()).stream()
+                .min(Comparator.comparingDouble(e -> e.distanceTo(this))).orElse(null);
     }
 
     @OnlyIn(Dist.CLIENT)

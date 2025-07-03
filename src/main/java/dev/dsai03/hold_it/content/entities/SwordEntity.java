@@ -20,6 +20,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -36,6 +37,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.UUID;
 
 public class SwordEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(SwordEntity.class, EntityDataSerializers.FLOAT);
@@ -46,6 +48,9 @@ public class SwordEntity extends ThrowableProjectile {
     private float lastPower = 1;
     private SpellHolder spellHolder;
     private Random random = new Random();
+    private UUID targetUUID;
+    private static final double HOMING_STRENGTH = 0.15;
+    private static final int HOMING_DELAY = 5;
 
     public SwordEntity(EntityType<? extends SwordEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -74,9 +79,23 @@ public class SwordEntity extends ThrowableProjectile {
             return;
         }
 
-        // Проверяем, если меч остановился
-        if (getDeltaMovement().length() < 0.02) {
-            entityData.set(THROWN, true);
+        if (!entityData.get(THROWN)) return;
+        if (targetUUID != null && tickCount > HOMING_DELAY) {
+            LivingEntity target = null;
+            for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(16))) {
+                if (entity.getUUID().equals(targetUUID)) {
+                    if (entity == getCaster()) continue;
+                    target = entity;
+                    break;
+                }
+            }
+            if (target != null && target.isAlive()) {
+                Vec3 toTarget = target.getBoundingBox().getCenter().subtract(position()).normalize();
+                Vec3 newMotion = getDeltaMovement().add(toTarget.scale(HOMING_STRENGTH)).normalize().scale(0.8);
+                setDeltaMovement(newMotion);
+            }
+        }
+        if (getDeltaMovement().length() < 0.01) {
             onHit(position());
         }
 
@@ -116,8 +135,13 @@ public class SwordEntity extends ThrowableProjectile {
     }
 
     @Override
-    public EntityDimensions getDimensions(Pose pPose) {
-        return new EntityDimensions(0.2f, 1.0f, false);
+    public EntityDimensions getDimensions(Pose pose) {
+        return EntityDimensions.scalable(0.25f, 0.25f);
+    }
+
+    @Override
+    public boolean canBeCollidedWith() {
+        return true;
     }
 
     @Override
@@ -166,18 +190,19 @@ public class SwordEntity extends ThrowableProjectile {
     @Override
     protected void onHitEntity(EntityHitResult hitResult) {
         if (level().isClientSide) return;
-        
+        if (!entityData.get(THROWN)) return;
         if (getCaster() == null) {
             discard();
             return;
         }
-        
-        if (!entityData.get(THROWN)) return;
-        
-        SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
-        SpellContext context = new SpellContext(level(), spellHolder.getSpell());
-        SpellUtils.cast(spellHolder.getSpell(), source, new SpellTarget(hitResult.getEntity()), context);
-        onHit(hitResult.getLocation());
+        Entity hit = hitResult.getEntity();
+        if (hit instanceof LivingEntity living) {
+            SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
+            SpellContext context = new SpellContext(level(), spellHolder.getSpell());
+            float power = getPower() * 1.5f;
+            SpellUtils.cast(spellHolder.getSpell(), source, new SpellTarget(living), context);
+        }
+        discard();
     }
 
     private void onHit(Vec3 location) {
@@ -226,5 +251,9 @@ public class SwordEntity extends ThrowableProjectile {
 
     public ItemStack getItem() {
         return new ItemStack(Items.IRON_SWORD);
+    }
+
+    public void setTarget(LivingEntity target) {
+        this.targetUUID = target.getUUID();
     }
 } 
