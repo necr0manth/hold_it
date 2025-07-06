@@ -33,10 +33,12 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.awt.*;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Random;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class SphereEntity extends Projectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
@@ -67,15 +69,16 @@ public class SphereEntity extends Projectile {
         this.targetPosition = null;
         this.setDeltaMovement(Vec3.ZERO);
     }
-
+    int timer=0;
     @Override
     public void tick() {
         if (!level().isClientSide) {
             if (isStationary) {
+                timer++;
                 setDeltaMovement(Vec3.ZERO);
                 float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower;
                 int dynamicDelay = 5 + (int) (300 * powerFactor);
-                if (tickCount >= dynamicDelay) {
+                if (timer >= dynamicDelay) {
                     explode();
                     discard();
                 }
@@ -102,7 +105,7 @@ public class SphereEntity extends Projectile {
 
         if (level().isClientSide || getOwner() == null) return;
 
-        var targets = new ArrayList<SpellTarget>();
+        List<SpellTarget> targets = new ArrayList<SpellTarget>();
         float powerFactor = getPower() / SpellSevenShapeEntity.defaultPower;
         float dynamicRadius = 1 + (7 * powerFactor);
 
@@ -125,7 +128,8 @@ public class SphereEntity extends Projectile {
                 }
             }
         }
-
+        Collections.shuffle(targets);
+        targets = targets.subList(0, Math.min((int) (132 * powerFactor), targets.size()));
         for (var target : targets) {
             SpellSource source = new SpellSource(casterRef.get(), InteractionHand.MAIN_HAND);
             SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());

@@ -57,6 +57,10 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
         sphereRef.load(compound);
     }
 
+    public float getCharge() {
+        return Math.min(getLifetime() / chargeTime(), 1);
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -92,11 +96,13 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void spellTick() {
+        float currentMana = getCasterMana();
+        float singleBallManaCost = getCastingSpellManaCost();
     }
 
     @Override
     public float getRequestedManaCost() {
-        return 0;
+        return Math.min(getCharge() / getCastingSpellManaCost(), getCasterMana());
     }
 
     @Override
