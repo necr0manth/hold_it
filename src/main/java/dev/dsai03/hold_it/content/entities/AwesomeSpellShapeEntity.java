@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.items.sorcery.SpellBook;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
@@ -16,9 +17,11 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
+import org.w3c.dom.Attr;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     public AwesomeSpellShapeEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
@@ -58,8 +61,12 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         }
     }
 
-    public static float chargeTime() {
-        return 10;
+    public float chargeTime() {
+        return 2 * maxBalls();
+    }
+
+    public int precision() {
+        return (int) Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.PRECISION);
     }
 
     protected void addAdditionalSaveData(CompoundTag compound) {
@@ -77,13 +84,35 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         if (level().isClientSide)
             return;
         var projectiles = getBalls();
-        int n = Mth.ceil(getCharge() / chargedBallPower()) - projectiles.size();
-        for (int i = 0; i < n; i++) {
-            var proj = new BallEntity(level(), this, projectiles.size());
+        int currentBallCount = projectiles.size();
+        int targetBallCount = Mth.ceil(getCharge() / chargedBallPower());
+        int newBallsNeeded = targetBallCount - currentBallCount;
+
+        // Получаем доступную ману
+        float currentMana = getCasterMana();
+        float singleBallManaCost = getCastingSpellManaCost();
+
+        // Сколько полных шаров можем создать с текущей маной
+        int fullAffordableBalls = currentMana > 0 ? Mth.floor(currentMana / singleBallManaCost) : 0;
+
+        // Если у нас есть мана на частичный шар (но не на полный), создаем его тоже
+        float remainingMana = currentMana - (fullAffordableBalls * singleBallManaCost);
+        boolean canCreatePartialBall = remainingMana > 0 && remainingMana < singleBallManaCost;
+
+        int totalAffordableBalls = fullAffordableBalls + (canCreatePartialBall ? 1 : 0);
+
+        // Сколько новых шаров можем создать
+        int ballsToCreate = Math.min(newBallsNeeded, Math.max(0, totalAffordableBalls - currentBallCount));
+
+        for (int i = 0; i < ballsToCreate; i++) {
+            // Проверяем precision заклинания для включения самонаведения
+            boolean enableHoming = precision() >= 2;
+            var proj = new BallEntity(level(), this, projectiles.size(), enableHoming);
             proj.setSpell(getSpell());
             level().addFreshEntity(proj);
             projectiles.add(proj);
         }
+
         saveBalls(projectiles);
         getSpell().setManaCost(tickCount);
         if (getCaster() instanceof ServerPlayer player) {
@@ -101,7 +130,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     public int maxBalls() {
-        return 5;
+        return (int) Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.MAGNITUDE);
     }
 
     public float distanceToProjectiles() {
@@ -136,25 +165,62 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
         return new BallData(new Vec3(pos.get(new Vector3f())), i == balls - 1 ? (Math.abs(charge % ballPower) < 1e-6f ? ballPower : charge % ballPower) : ballPower);
     }
 
+    /**
+     * Возвращает эффективный заряд заклинания с учетом доступной маны
+     * Ограничивает максимальное количество шаров тем, что может быть создано с текущим запасом маны
+     */
+    public float getEffectiveCharge() {
+        float basicCharge = getCharge();
+        int theoreticalBalls = Mth.ceil(basicCharge / chargedBallPower());
+
+        // Сколько шаров можем создать с текущей маной
+        float currentMana = getCasterMana();
+        float singleBallManaCost = getCastingSpellManaCost();
+
+        if (currentMana <= 0) {
+            return 0;
+        }
+
+        // Сколько полных шаров можем создать
+        int fullAffordableBalls = Mth.floor(currentMana / singleBallManaCost);
+
+        // Оставшаяся мана после полных шаров
+        float remainingMana = currentMana - (fullAffordableBalls * singleBallManaCost);
+
+        // Если есть остаточная мана, добавляем заряд для частичного шара
+        float partialBallCharge = 0;
+        if (remainingMana > 0 && fullAffordableBalls < theoreticalBalls) {
+            // Частичный заряд пропорционален доступной мане
+            partialBallCharge = (remainingMana / singleBallManaCost) * chargedBallPower();
+        }
+
+        // Общий эффективный заряд = полные шары + частичный шар
+        float effectiveCharge = fullAffordableBalls * chargedBallPower() + partialBallCharge;
+
+        // Не превышаем базовый заряд и не превышаем теоретически возможное количество шаров
+        return Math.min(basicCharge, effectiveCharge);
+    }
+
     public float getCharge() {
         return Math.min(getLifetime() / chargeTime(), 1) * chargedBallPower() * maxBalls();
     }
 
     public BallData getBallData(int ball, Vec3 castPosition, Vec3 castVector, float castYRot, float partialTick) {
-        return getBallData(ball, getCharge(), chargedBallPower(), radius(), distanceToProjectiles(), castPosition.add(0, Math.max(0, -castVector.normalize().y * 0.5f + 1), 0), castVector, castYRot, tickCount/20f + partialTick);
+        return getBallData(ball, getEffectiveCharge(), chargedBallPower(), radius(), distanceToProjectiles(), castPosition.add(0, Math.max(0, -castVector.normalize().y * 0.5f + 1), 0), castVector, castYRot, tickCount / 20f + partialTick);
     }
 
     @Override
     public float getRequestedManaCost() {
-        return getCharge() / chargedBallPower() * getBaseSpellManaCost();
+        return Math.min(getCharge() / chargedBallPower() * getCastingSpellManaCost(), getCasterMana());
     }
 
     @Override
     protected void applySpell(float requestedManaCost, float casterMana) {
         if (level().isClientSide)
             return;
-        for (var ball : getBalls()) {
-            ball.shoot(ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize());
+        var balls = getBalls();
+        for (var ball : balls) {
+            ball.shoot(precision() == 0 || balls.size() == 1 ? ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize() : precision() == 1 ? getCaster().getLookAngle() : getCaster().getLookAngle().multiply(1, 0, 1));
         }
     }
 

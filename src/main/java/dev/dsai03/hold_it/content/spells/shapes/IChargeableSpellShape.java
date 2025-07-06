@@ -1,8 +1,9 @@
 package dev.dsai03.hold_it.content.spells.shapes;
 
-import com.mna.api.spells.adjusters.SpellAdjustingContext;
+import dev.dsai03.hold_it.util.ISpellMultiAdjuster;
 
-public interface IChargeableSpellShape {
-    default void adjustSpell(SpellAdjustingContext context) {
+public interface IChargeableSpellShape extends ISpellMultiAdjuster {
+    default float castComplexity() {
+        return 0;
     }
 }

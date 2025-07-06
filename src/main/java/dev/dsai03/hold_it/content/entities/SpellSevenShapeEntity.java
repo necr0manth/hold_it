@@ -101,6 +101,13 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void applySpell(float manaCost, float playerMana) {
+        if (!level().isClientSide) {
+            var projectile = sphereRef.get();
+            if (projectile != null) {
+                projectile.setStationary();
+            }
+            this.discard();
+        }
     }
 
     @Override
@@ -108,7 +115,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
         if (!level().isClientSide) {
             var projectile = sphereRef.get();
             if (projectile != null) {
-                projectile.setStationary();
+                projectile.discard();
             }
             this.discard();
         }

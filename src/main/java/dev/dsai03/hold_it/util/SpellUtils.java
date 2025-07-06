@@ -41,20 +41,30 @@ public class SpellUtils {
         SpellCaster.applyAdjusters(caster.getUseItem(), caster, caster.getUsedItemHand(), curioCast, spell, stage);
     }
 
-    public static void cast(ISpellDefinition spell, SpellSource source, Collection<SpellTarget> targets, Function<SpellTarget, SpellContext> context, float manaCost, boolean consume) {
-        for (var target : targets) {
-            SpellCaster.applyAdjusters(source.getCaster().getUseItem(), source.getCaster(), source.getHand(), false, spell, SpellCastStage.CASTING);
-            var spellManaCost = spell.getManaCost();
-            if (manaCost > spellManaCost) {
-                var results = cast(spell, source, target, context.apply(target));
-                if (results.values().stream().anyMatch(r -> r.is_success)) {
-                    manaCost -= spellManaCost;
-                    if (consume)
-                        consumeMana(source.getCaster(), spellManaCost);
+    public static void cast(ISpellDefinition spell, SpellSource source, Collection<SpellTarget> targets, Function<SpellTarget, SpellContext> context, float manaCost, float spellManaCost, boolean consume) {
+        Runnable[] task = new Runnable[1];
+        var manaCostCounter = new float[]{manaCost};
+        task[0] = () -> {
+            if (manaCostCounter[0] > spellManaCost) {
+                boolean success = false;
+                for (var target : targets) {
+                    SpellCaster.applyAdjusters(source.getCaster().getUseItem(), source.getCaster(), source.getHand(), false, spell, SpellCastStage.CASTING);
+                    if (manaCostCounter[0] > spellManaCost) {
+                        var results = cast(spell, source, target, context.apply(target));
+                        if (results.values().stream().anyMatch(r -> r.is_success)) {
+                            manaCostCounter[0] -= spellManaCost;
+                            success = true;
+                            if (consume)
+                                consumeMana(source.getCaster(), spellManaCost);
+                        }
+                    } else
+                        return;
                 }
-            } else
-                return;
-        }
+                if (success)
+                    ServerScheduler.schedule(1, task[0]);
+            }
+        };
+        task[0].run();
     }
 
     public static void consumeMana(LivingEntity caster, float mana) {
@@ -66,5 +76,9 @@ public class SpellUtils {
         if (spellEntities.isEmpty())
             return null;
         return spellEntities.get(0);
+    }
+
+    public static IPlayerMagic getPlayerMagic(LivingEntity caster) {
+        return caster.getCapability(PlayerMagicProvider.MAGIC).resolve().get();
     }
 }

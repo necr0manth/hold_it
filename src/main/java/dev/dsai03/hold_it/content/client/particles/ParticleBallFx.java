@@ -69,14 +69,17 @@ public class ParticleBallFx {
                     var pos = RandomUtils.randomVectorFromBall().scale(Math.pow(random.nextDouble(), 5) * ballData.radius() * 0.7);
                     OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.BLOOD.get()).setGravity(0.0005f).setScale(0.01f)), Minecraft.getInstance().level, pos, pos.normalize().scale(random.nextDouble() * 0.01))).offset(positionSupplier));
                 }
-            } else if (affinity == Affinity.ARCANE) {
+            } else if (affinity == Affinity.ARCANE || affinity == Affinity.ENDER) {
                 for (int j = 0; j < 10; j++) {
-                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.ARCANE.get()).setGravity(0.001f)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius()), RandomUtils.randomVectorFromBall().scale(0.01))).offset(positionSupplier).addTicker(p->{
+                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleUtils.getParticleType(affinity)).setGravity(0.001f)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius()), RandomUtils.randomVectorFromBall().scale(0.01))).offset(positionSupplier).addTicker(p -> {
                         var targetSpeed = p.getPos().scale(-0.03);
                         p.setSpeed(p.getSpeed().add(targetSpeed.subtract(p.getSpeed()).normalize().scale(Math.min(targetSpeed.subtract(p.getSpeed()).length(), 0.1))));
                         return false;
                     }));
                 }
+//            } else if (affinity == Affinity.ENDER) {
+//                for (int j = 0; j < ballData.radius * 100; j++)
+//                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.ENDER.get()).setGravity(0)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius()), Vec3.ZERO)).offset(positionSupplier));
             } else {
                 var particleType = ParticleUtils.getParticleType(affinity);
                 OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(particleType).setGravity(0.001f)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius()), RandomUtils.randomVectorFromBall().scale(0.01))).offset(positionSupplier));
