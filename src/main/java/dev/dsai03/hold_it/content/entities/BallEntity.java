@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
@@ -48,17 +49,23 @@ public class BallEntity extends ThrowableProjectile {
     @Getter
     private SpellHolder spellHolder;
     // Настройки самонаведения
-    @Getter @Setter
+    @Getter
+    @Setter
     private boolean isHomingEnabled = false;
-    @Getter @Setter
+    @Getter
+    @Setter
     private float trackingStrength = 0.15f; // Сила наведения (0.0 - 1.0)
-    @Getter @Setter
+    @Getter
+    @Setter
     private double searchRadius = 12.0; // Радиус поиска целей
-    @Getter @Setter
+    @Getter
+    @Setter
     private double maxTrackingDistance = 25.0; // Максимальная дистанция отслеживания
-    @Getter @Setter
+    @Getter
+    @Setter
     private double maxTurnRate = Math.PI / 8; // Максимальная скорость поворота (радианы за тик)
-    @Getter @Setter
+    @Getter
+    @Setter
     private int targetSearchCooldown = 0; // Кулдаун поиска новых целей
 
     private BallData renderBallData;
@@ -202,7 +209,7 @@ public class BallEntity extends ThrowableProjectile {
         this.entityData.define(POWER, 0.0f);
         this.entityData.define(ID, -1);
         this.entityData.define(THROWN, false);
-        spellHolder = SpellHolder.createAndDefine(SPELL,entityData, "spell");
+        spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
         casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
         targetTracker = TargetTracker.createAndDefine(TARGET, this);
     }
@@ -298,7 +305,27 @@ public class BallEntity extends ThrowableProjectile {
         for (var target : targets) {
             SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
             SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
-            SpellUtils.cast(spellHolder.getSpell(), source, target, context);
+            var charge = entityData.get(POWER) / 0.7;
+            boolean[] wasScaled = new boolean[1];
+            boolean[] cancel = new boolean[1];
+            if (charge < 0.8) {
+                spellHolder.getSpell().iterateComponents(c -> {
+                    for (var attribute : c.getContainedAttributes()) {
+                        var value = c.getValue(attribute);
+                        if (c.getValue(attribute) != 0 && attribute != Attribute.DELAY) {
+                            c.setMultiplier(attribute, (float) (c.getMultiplier(attribute) * charge));
+                            if (value - c.getValue(attribute) < c.getStep(attribute)) {
+                                c.setValue(attribute, value - c.getStep(attribute));
+                            }
+                            if (c.getValue(attribute) < c.getMinimumValue(attribute))
+                                cancel[0] = true;
+                            wasScaled[0] = true;
+                        }
+                    }
+                });
+            }
+            if (!cancel[0] && (wasScaled[0] || charge > 0.7f))
+                SpellUtils.cast(spellHolder.getSpell(), source, target, context);
         }
         discard();
     }
