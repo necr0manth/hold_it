@@ -1,10 +1,18 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.ManaAndArtificeMod;
 import com.mna.api.spells.adjusters.SpellAdjustingContext;
 import com.mna.api.spells.adjusters.SpellCastStage;
+import com.mna.api.spells.attributes.Attribute;
+import com.mna.api.spells.base.IModifiedSpellPart;
 import com.mna.api.spells.base.ISpellDefinition;
+import com.mna.api.spells.parts.Shape;
+import com.mna.api.spells.targeting.SpellSource;
+import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
+import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
+import dev.dsai03.hold_it.content.spells.shapes.IChargeableSpellShape;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
@@ -24,6 +32,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class ChargeableSpellEntity extends Entity {
@@ -103,6 +112,42 @@ public abstract class ChargeableSpellEntity extends Entity {
         return getSpell().getManaCost();
     }
 
+    public float getCastingSpellManaCost() {
+        var recipe = getSpell();
+        overrideManaCost = false;
+        var nbt = new CompoundTag();
+        recipe.writeToNBT(nbt);
+        var newRecipe = SpellRecipe.fromNBT(nbt);
+        var modifiedShape = newRecipe.getShape();
+        if (modifiedShape == null)
+            throw new RuntimeException("0_o");
+        if (modifiedShape.getPart() instanceof IChargeableSpellShape shape) {
+            newRecipe.setShape(new Shape(null) {
+                @Override
+                public List<SpellTarget> Target(SpellSource var1, Level var2, IModifiedSpellPart<Shape> var3, ISpellDefinition var4) {
+                    throw new RuntimeException("0_o");
+                }
+
+                @Override
+                public float initialComplexity() {
+                    return shape.castComplexity();
+                }
+
+                @Override
+                public int requiredXPForRote() {
+                    throw new RuntimeException("0_o");
+                }
+            });
+            for (var attribute : modifiedShape.getContainedAttributes())
+                newRecipe.changeShapeAttributeValue(attribute, modifiedShape.getValue(attribute));
+            newRecipe.calculateManaCost();
+            SpellUtils.applyAdjusters(newRecipe, getCaster(), false, SpellCastStage.CALCULATING_MANA_COST);
+            overrideManaCost = true;
+            return newRecipe.getManaCost();
+        }
+        throw new RuntimeException("0_o");
+    }
+
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         return new EntityDimensions(0, 0, true);
@@ -140,10 +185,10 @@ public abstract class ChargeableSpellEntity extends Entity {
         }
         LivingEntity caster = getCaster();
         ISpellDefinition recipe = getSpell();
-        if(spellCasted)
+        if (spellCasted)
             return;
-        if(!level().isClientSide){
-            if(caster == null) {
+        if (!level().isClientSide) {
+            if (caster == null) {
                 interrupt(InterruptReason.OTHER);
                 return;
             }
@@ -219,7 +264,8 @@ public abstract class ChargeableSpellEntity extends Entity {
         return ans[0];
     }
 
-    protected void applySpell() {var manaCost = getRequestedManaCost();
+    protected void applySpell() {
+        var manaCost = getRequestedManaCost();
         Optional.ofNullable(getCaster()).ifPresent(
                 caster -> caster.getCapability(PlayerMagicProvider.MAGIC).ifPresent(
                         magic -> {

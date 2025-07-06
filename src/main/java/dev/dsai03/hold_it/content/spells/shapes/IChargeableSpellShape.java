@@ -5,4 +5,8 @@ import com.mna.api.spells.adjusters.SpellAdjustingContext;
 public interface IChargeableSpellShape {
     default void adjustSpell(SpellAdjustingContext context) {
     }
+
+    default float castComplexity() {
+        return 0;
+    }
 }

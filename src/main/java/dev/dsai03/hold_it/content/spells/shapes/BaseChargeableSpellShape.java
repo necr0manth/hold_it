@@ -38,6 +38,10 @@ public abstract class BaseChargeableSpellShape<T extends ChargeableSpellEntity> 
         return 100000000;
     }
 
+    public float castComplexity() {
+        return 0;
+    }
+
     @SafeVarargs
     private Class<T> getEntityClass(T... huy) {
         return (Class<T>) huy.getClass().componentType();

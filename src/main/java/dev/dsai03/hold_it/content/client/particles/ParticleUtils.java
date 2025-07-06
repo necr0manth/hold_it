@@ -42,7 +42,7 @@ public class ParticleUtils {
         return switch (affinity) {
             case ARCANE -> ParticleInit.ARCANE.get();
             case EARTH -> ParticleInit.DUST.get();
-            case ENDER -> ParticleInit.ENDER.get();
+            case ENDER -> ParticleInit.ENDER_VELOCITY.get();
             case FIRE -> ParticleInit.FLAME.get();
             case WATER -> ParticleInit.WATER.get();
             case WIND -> ParticleInit.AIR_VELOCITY.get();
@@ -193,7 +193,7 @@ public class ParticleUtils {
 
     public static ArrayList<Vec3> getJagged(Vec3 begin, Vec3 end, int slicesLeft, double maxJagMultiplier) {
         float a = 0.4f + random.nextFloat(0.2f);
-        if(begin.subtract(end).length()==0)
+        if (begin.subtract(end).length() == 0)
             return new ArrayList<>(List.of(begin));
         Vec3 mid = begin.add(end.subtract(begin).scale(a)).add(getRandomRotNormal(end.subtract(begin)).normalize().scale(random.nextDouble(end.subtract(begin).length() * maxJagMultiplier)));
         if (slicesLeft > 0) {
@@ -247,4 +247,7 @@ public class ParticleUtils {
         };
     }
 
+    public static Consumer<ParticleAccess> fadeInHuy(float time) {
+        return p -> p.accessor.setAlpha(Math.min(1, p.particle.getLifetime() / time));
+    }
 }

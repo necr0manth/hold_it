@@ -30,6 +30,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
 import java.util.Random;
 
 import java.util.ArrayList;
@@ -142,11 +143,11 @@ public class SphereEntity extends Projectile {
 
         float rotationSpeed = isStationary ? 3.0f : 1.5f;
         float globalRotation = (tickCount * rotationSpeed) % 360;
-        float radRotation = globalRotation * ((float)Math.PI / 180f);
+        float radRotation = globalRotation * ((float) Math.PI / 180f);
 
         int particleCount = isStationary ?
-                (int)(20 + 45 * powerFactor) :
-                (int)(15 + 35 * powerFactor);
+                (int) (20 + 45 * powerFactor) :
+                (int) (15 + 35 * powerFactor);
 
         for (int i = 0; i < particleCount; i++) {
             if (isStationary) {
@@ -175,7 +176,7 @@ public class SphereEntity extends Projectile {
                         pos,
                         tangent.scale(speed),
                         ParticleUtils.EMPTY_TICKER,
-                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
+                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(100))
                 );
             } else {
                 int armIndex = random.nextInt(3);
@@ -200,7 +201,7 @@ public class SphereEntity extends Projectile {
                         pos,
                         velocity,
                         ParticleUtils.EMPTY_TICKER,
-                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
+                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(100))
                 );
             }
 
@@ -219,7 +220,7 @@ public class SphereEntity extends Projectile {
                         pos,
                         position().subtract(pos).normalize().scale(0.03),
                         ParticleUtils.EMPTY_TICKER,
-                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
+                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(100))
                 );
             }
         }
@@ -238,7 +239,7 @@ public class SphereEntity extends Projectile {
                         ),
                         Vec3.ZERO,
                         ParticleUtils.EMPTY_TICKER,
-                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
+                        ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(100))
                 );
             }
 
@@ -260,7 +261,7 @@ public class SphereEntity extends Projectile {
                                 ),
                                 new Vec3(-Math.sin(angle), 0, Math.cos(angle)).scale(0.02),
                                 ParticleUtils.EMPTY_TICKER,
-                                ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
+                                ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(100))
                         );
                     }
                 }

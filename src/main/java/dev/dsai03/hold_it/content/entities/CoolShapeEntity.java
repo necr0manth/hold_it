@@ -1,7 +1,10 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.ManaAndArtificeMod;
 import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
+import com.mna.api.particles.ParticleInit;
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
@@ -18,13 +21,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class CoolShapeEntity extends ChargeableSpellEntity {
     Random random = new Random();
@@ -37,12 +39,12 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
         super(AwesomeEntityTypes.COOL_SHAPE.get(), caster, spell, world);
     }
 
-    public static float radius() {
-        return 10;
+    public float radius() {
+        return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.RADIUS);
     }
 
-    public static float chargeTime() {
-        return 2;
+    public float chargeTime() {
+        return radius() * 0.2f;
     }
 
     @Override
@@ -113,25 +115,28 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
     }
 
     public float getMaxManaCost() {
-        return 1000;
+        var cap = Objects.requireNonNull(getCaster()).getCapability(ManaAndArtificeMod.getMagicCapability());
+        if (!cap.isPresent())
+            return 0;
+        return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.MAGNITUDE) * cap.orElseThrow(() -> new RuntimeException("0_o")).getCastingResource().getMaxAmount();
     }
 
     @Override
     protected void onInterrupt(InterruptReason reason) {
     }
+
     @Override
     public float getRequestedManaCost() {
-        return Math.min(1, getLifetime() / chargeTime()) * getMaxManaCost();
+        return Math.min(Math.min(1, getLifetime() / chargeTime()) * getMaxManaCost(), getCasterMana());
     }
 
     @Override
     protected void applySpell(float manaCost, float casterMana) {
-        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), getManaCost(), false);
+        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), getManaCost(), getCastingSpellManaCost(), false);
     }
 
     protected List<SpellTarget> target() {
-        var targets = new ArrayList<SpellTarget>();
-        level().getEntities(getCaster(), getCaster().getBoundingBox().inflate(radius()), (Entity e) -> e != this && e.position().distanceTo(getCaster().position()) < radius()).stream().map(SpellTarget::new).forEach(targets::add);
+        var blockTargets = new ArrayList<SpellTarget>();
         for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
             for (int j = -1; j <= Mth.ceil(radius()); j++) {
                 for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
@@ -141,13 +146,16 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
                     if (level().getBlockState(pos).isAir())
                         continue;
                     if (j == -1)
-                        targets.add(new SpellTarget(pos, Direction.UP));
+                        blockTargets.add(new SpellTarget(pos, Direction.UP));
                     else
-                        targets.add(new SpellTarget(pos, null));
+                        blockTargets.add(new SpellTarget(pos, null));
                 }
             }
         }
-        Collections.shuffle(targets);
+        Collections.shuffle(blockTargets);
+        var targets = new ArrayList<SpellTarget>();
+        level().getEntities(getCaster(), getCaster().getBoundingBox().inflate(radius() + 2), (Entity e) -> e != this && e.position().distanceTo(getCaster().position()) < radius()).stream().map(SpellTarget::new).forEach(targets::add);
+        targets.addAll(blockTargets);
         return targets;
     }
 }
