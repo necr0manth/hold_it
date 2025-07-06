@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.spells.shapes;
 
+import com.mna.api.spells.adjusters.SpellAdjustingContext;
 import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.attributes.AttributeValuePair;
 import com.mna.api.spells.base.ISpellDefinition;
@@ -26,5 +27,17 @@ public class AwesomeSpellShape extends BaseChargeableSpellShape<AwesomeSpellShap
     @Override
     public int requiredXPForRote() {
         return 1000;
+    }
+
+    @Override
+    public void adjustOnSpellcraftingManaCostEstimate(SpellAdjustingContext context) {
+        super.adjustOnSpellcraftingManaCostEstimate(context);
+        context.spell.setManaCost(context.spell.getShape().getValue(Attribute.MAGNITUDE) * context.spell.getManaCost());
+    }
+
+    @Override
+    public void adjustOnSpellTooltip(SpellAdjustingContext context) {
+        super.adjustOnSpellcraftingManaCostEstimate(context);
+        context.spell.setManaCost(context.spell.getShape().getValue(Attribute.MAGNITUDE) * context.spell.getManaCost());
     }
 }

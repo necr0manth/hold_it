@@ -47,7 +47,6 @@ public class BallEntity extends ThrowableProjectile {
     private float lastPower = 1;
     @Getter
     private SpellHolder spellHolder;
-
     // Настройки самонаведения
     @Getter @Setter
     private boolean isHomingEnabled = false;
@@ -312,20 +311,6 @@ public class BallEntity extends ThrowableProjectile {
     // ========== Методы управления самонаведением ==========
 
     /**
-     * Включает или выключает самонаведение
-     */
-    public void setHomingEnabled(boolean enabled) {
-        this.isHomingEnabled = enabled;
-    }
-
-    /**
-     * Проверяет, включено ли самонаведение
-     */
-    public boolean isHomingEnabled() {
-        return isHomingEnabled;
-    }
-
-    /**
      * Устанавливает силу наведения (0.0 - 1.0)
      */
     public void setTrackingStrength(float strength) {
@@ -350,20 +335,6 @@ public class BallEntity extends ThrowableProjectile {
         if (targetTracker != null) {
             targetTracker.setMaxTrackingDistance(distance);
         }
-    }
-
-    /**
-     * Устанавливает максимальную скорость поворота
-     */
-    public void setMaxTurnRate(double rate) {
-        this.maxTurnRate = rate;
-    }
-
-    /**
-     * Устанавливает кулдаун поиска целей
-     */
-    public void setTargetSearchCooldown(int cooldown) {
-        this.targetSearchCooldown = cooldown;
     }
 
     /**

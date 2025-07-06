@@ -77,4 +77,8 @@ public class SpellUtils {
             return null;
         return spellEntities.get(0);
     }
+
+    public static IPlayerMagic getPlayerMagic(LivingEntity caster) {
+        return caster.getCapability(PlayerMagicProvider.MAGIC).resolve().get();
+    }
 }

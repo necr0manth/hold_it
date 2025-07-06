@@ -218,8 +218,9 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     protected void applySpell(float requestedManaCost, float casterMana) {
         if (level().isClientSide)
             return;
-        for (var ball : getBalls()) {
-            ball.shoot(precision() == 0 ? ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize() : getCaster().getLookAngle());
+        var balls = getBalls();
+        for (var ball : balls) {
+            ball.shoot(precision() == 0 || balls.size() == 1 ? ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize() : precision() == 1 ? getCaster().getLookAngle() : getCaster().getLookAngle().multiply(1, 0, 1));
         }
     }
 
