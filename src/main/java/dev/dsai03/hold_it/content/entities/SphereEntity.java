@@ -140,7 +140,6 @@ public class SphereEntity extends Projectile {
         final double spiralTightness = 2.5;
         final double spiralThickness = 0.3;
 
-        // Определяем количество частиц
         int particleCount;
         if (isStationary) {
             particleCount = (int) (8 + 15 * powerFactor);
