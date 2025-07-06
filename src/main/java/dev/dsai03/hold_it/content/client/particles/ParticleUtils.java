@@ -48,9 +48,9 @@ public class ParticleUtils {
             case WIND -> ParticleInit.AIR_VELOCITY.get();
             case HELLFIRE -> ParticleInit.HELLFIRE.get();
             case ICE -> ParticleInit.FROST.get();
-            case LIGHTNING -> ParticleInit.FLAME.get();
+            case LIGHTNING -> ParticleInit.SPARKLE_VELOCITY.get();
             case UNKNOWN -> null;
-            case BLOOD -> ParticleInit.BLOOD.get();
+            case BLOOD -> ParticleInit.DROPLET.get();
         };
     }
 
