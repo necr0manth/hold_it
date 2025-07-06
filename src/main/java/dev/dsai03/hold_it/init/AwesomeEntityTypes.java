@@ -12,16 +12,16 @@ import net.minecraftforge.registries.RegistryObject;
 import java.util.function.Supplier;
 
 public interface AwesomeEntityTypes {
-	DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MyAwesomeMnaAddon.MODID);
-	RegistryObject<EntityType<CoolShapeEntity>> COOL_SHAPE = register("cool_shape", () -> EntityType.Builder.of(CoolShapeEntity::new, MobCategory.MISC));
-	RegistryObject<EntityType<AwesomeSpellShapeEntity>> AWESOME_SHAPE = register("awesome_shape", () -> EntityType.Builder.of(AwesomeSpellShapeEntity::new, MobCategory.MISC));
-	RegistryObject<EntityType<BallEntity>> BALL_ENTITY_TYPE = register("ball", () -> EntityType.Builder.<BallEntity>of(BallEntity::new, MobCategory.MISC).fireImmune());
-	RegistryObject<EntityType<SpellSevenShapeEntity>> SEVEN_SHAPE = register("seven_shape", () -> EntityType.Builder.of(SpellSevenShapeEntity::new, MobCategory.MISC));
-	RegistryObject<EntityType<SphereEntity>> SPHERE_ENTITY_TYPE = register("sphere", () -> EntityType.Builder.of(SphereEntity::new, MobCategory.MISC));
-	RegistryObject<EntityType<BigBallSpellShapeEntity>> BIG_BALL_SPELL_SHAPE = register("big_ball_shape", () -> EntityType.Builder.of(BigBallSpellShapeEntity::new, MobCategory.MISC));
-	RegistryObject<EntityType<BigBallEntity>> BIG_BALL_ENTITY_TYPE = register("big_ball", () -> EntityType.Builder.of(BigBallEntity::new, MobCategory.MISC));
+    DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MyAwesomeMnaAddon.MODID);
+    RegistryObject<EntityType<CoolShapeEntity>> COOL_SHAPE = register("cool_shape", () -> EntityType.Builder.<CoolShapeEntity>of(CoolShapeEntity::new, MobCategory.MISC).fireImmune());
+    RegistryObject<EntityType<AwesomeSpellShapeEntity>> AWESOME_SHAPE = register("awesome_shape", () -> EntityType.Builder.<AwesomeSpellShapeEntity>of(AwesomeSpellShapeEntity::new, MobCategory.MISC).fireImmune());
+    RegistryObject<EntityType<BallEntity>> BALL_ENTITY_TYPE = register("ball", () -> EntityType.Builder.<BallEntity>of(BallEntity::new, MobCategory.MISC).fireImmune().fireImmune());
+    RegistryObject<EntityType<SpellSevenShapeEntity>> SEVEN_SHAPE = register("seven_shape", () -> EntityType.Builder.<SpellSevenShapeEntity>of(SpellSevenShapeEntity::new, MobCategory.MISC).fireImmune());
+    RegistryObject<EntityType<SphereEntity>> SPHERE_ENTITY_TYPE = register("sphere", () -> EntityType.Builder.<SphereEntity>of(SphereEntity::new, MobCategory.MISC).fireImmune());
+    RegistryObject<EntityType<BigBallSpellShapeEntity>> BIG_BALL_SPELL_SHAPE = register("big_ball_shape", () -> EntityType.Builder.<BigBallSpellShapeEntity>of(BigBallSpellShapeEntity::new, MobCategory.MISC).fireImmune());
+    RegistryObject<EntityType<BigBallEntity>> BIG_BALL_ENTITY_TYPE = register("big_ball", () -> EntityType.Builder.<BigBallEntity>of(BigBallEntity::new, MobCategory.MISC).fireImmune());
 
-	static <T extends Entity> RegistryObject<EntityType<T>> register(String name, Supplier<EntityType.Builder<T>> builderSupplier) {
-		return ENTITY_TYPES.register(name, () -> builderSupplier.get().build(MyAwesomeMnaAddon.MODID + ":" + name));
-	}
+    static <T extends Entity> RegistryObject<EntityType<T>> register(String name, Supplier<EntityType.Builder<T>> builderSupplier) {
+        return ENTITY_TYPES.register(name, () -> builderSupplier.get().build(MyAwesomeMnaAddon.MODID + ":" + name));
+    }
 }

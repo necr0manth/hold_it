@@ -8,7 +8,6 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.parts.Shape;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
-import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
 import dev.dsai03.hold_it.content.entities.ChargeableSpellEntity;
 import dev.dsai03.hold_it.util.SpellUtils;
@@ -51,7 +50,7 @@ public abstract class BaseChargeableSpellShape<T extends ChargeableSpellEntity> 
         return (Class<T>) huy.getClass().componentType();
     }
 
-    private void adjustOnTooltipAndCrafting(SpellAdjustingContext context) {
+    private void commonAdjust(SpellAdjustingContext context) {
         var recipe = context.spell;
         var nbt = new CompoundTag();
         recipe.writeToNBT(nbt);
@@ -86,11 +85,12 @@ public abstract class BaseChargeableSpellShape<T extends ChargeableSpellEntity> 
     }
 
     public void adjustOnSpellTooltip(SpellAdjustingContext context) {
-        adjustOnTooltipAndCrafting(context);
+        commonAdjust(context);
     }
 
     @Override
     public void adjustOnCalculatingManaCost(SpellAdjustingContext context) {
+        commonAdjust(context);
         var entity = SpellUtils.getCastingSpellEntity(context.caster);
         if (getEntityClass().isInstance(entity))
             entity.adjustSpell(context);
@@ -101,6 +101,6 @@ public abstract class BaseChargeableSpellShape<T extends ChargeableSpellEntity> 
 
     @Override
     public void adjustOnSpellcraftingManaCostEstimate(SpellAdjustingContext context) {
-        adjustOnTooltipAndCrafting(context);
+        commonAdjust(context);
     }
 }

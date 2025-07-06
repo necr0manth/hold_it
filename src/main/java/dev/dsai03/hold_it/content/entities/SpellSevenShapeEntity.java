@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
@@ -8,6 +9,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
+import java.util.Objects;
 import java.util.Random;
 
 public class SpellSevenShapeEntity extends ChargeableSpellEntity {
@@ -26,8 +28,12 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     public static final float defaultPower = 0.7f;
     public static final float distanceToProjectile = 2.5f;
 
-    public static float radius() {
-        return 5;
+    public float radius() {
+        return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.RADIUS);
+    }
+
+    public float magnitude() {
+        return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.MAGNITUDE);
     }
 
     public static float chargeTime() {
@@ -78,13 +84,13 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
         var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
         var projectile = sphereRef.get();
-        float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
+        float power = Math.min(getLifetime() / chargeTime(), 1) * radius();
 
         if (projectile != null) {
             projectile.setPower(power);
             projectile.targetPosition = centerPos;
         } else {
-            var proj = new SphereEntity(level(), this);
+            var proj = new SphereEntity(level(), this, magnitude(), radius());
             proj.setOwner(getCaster());
             proj.setSpell(getSpell());
             proj.setPos(centerPos);
@@ -96,13 +102,10 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void spellTick() {
-        float currentMana = getCasterMana();
-        float singleBallManaCost = getCastingSpellManaCost();
     }
-
     @Override
     public float getRequestedManaCost() {
-        return Math.min(getCharge() / getCastingSpellManaCost(), getCasterMana());
+        return Math.min(getCharge() * magnitude() * getCastingSpellManaCost(), getCasterMana());
     }
 
     @Override
