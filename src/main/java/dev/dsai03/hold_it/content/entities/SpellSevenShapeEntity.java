@@ -1,22 +1,13 @@
 package dev.dsai03.hold_it.content.entities;
 
 import com.mna.api.spells.base.ISpellDefinition;
-import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraft.world.entity.EntityType;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 public class SpellSevenShapeEntity extends ChargeableSpellEntity {
@@ -44,8 +35,8 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected boolean isCharged() {
-        return getLifetime() > chargeTime();
+    public boolean isPrepared() {
+        return true;
     }
 
     @Override
@@ -100,33 +91,20 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    protected void chargeTick() {
+    protected void spellTick() {
     }
 
     @Override
-    protected void overChargeTick() {
-    }
-
-    @Override
-    protected boolean isOverCharged() {
-        return false;
-    }
-
-    @Override
-    protected void onCharged() {
-    }
-
-    @Override
-    public float getManaCost() {
+    public float getRequestedManaCost() {
         return 0;
     }
 
     @Override
-    protected void applySpell(float manaCost) {
+    protected void applySpell(float manaCost, float playerMana) {
     }
 
     @Override
-    protected void onInterrupt() {
+    protected void onInterrupt(InterruptReason reason) {
         if (!level().isClientSide) {
             var projectile = sphereRef.get();
             if (projectile != null) {
