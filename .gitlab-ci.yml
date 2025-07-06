@@ -11,6 +11,7 @@ cache:
 
 stages:
   - build
+  - lint
   - test
 
 build:
@@ -20,6 +21,16 @@ build:
   artifacts:
     paths:
       - build/libs/*.jar
+
+lint:
+  stage: lint
+  script:
+    - ./gradlew check --no-daemon
+  artifacts:
+    paths:
+      - build/reports/
+    when: always
+  allow_failure: true
 
 test:
   stage: test
