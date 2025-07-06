@@ -11,6 +11,7 @@ cache:
 
 stages:
   - build
+  - test
 
 build:
   stage: build
@@ -19,3 +20,13 @@ build:
   artifacts:
     paths:
       - build/libs/*.jar
+
+test:
+  stage: test
+  script:
+    - ./gradlew runGameTestServer --no-daemon
+  artifacts:
+    paths:
+      - run/gameTestServer/logs/
+    when: always
+  allow_failure: true
