@@ -44,7 +44,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     public static final float distanceToProjectile = 2.5f;
 
     public static float radius() {
-        return 5;
+        return 7;
     }
 
     public static float chargeTime() {
@@ -125,17 +125,19 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
         var sphere = ballRef.get();
+        float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
+        float radius = radius() * power;
         if (sphere == null) return targets;
 
-        level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius()),
-                        (Entity e) -> e != this && e != sphere && e.position().distanceTo(sphere.position()) < radius())
+        level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius),
+                        (Entity e) -> e != this && e != sphere && e.position().distanceTo(sphere.position()) < radius)
                 .stream().map(SpellTarget::new).forEach(targets::add);
 
-        for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
-            for (int j = -1; j <= Mth.ceil(radius()); j++) {
-                for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
+        for (int i = -Mth.ceil(radius); i <= Mth.ceil(radius); i++) {
+            for (int j = -1; j <= Mth.ceil(radius); j++) {
+                for (int k = -Mth.ceil(radius); k <= Mth.ceil(radius); k++) {
                     var pos = BlockPos.containing(sphere.position().add(i, j, k));
-                    if (pos.getCenter().distanceTo(sphere.position()) > radius())
+                    if (pos.getCenter().distanceTo(sphere.position()) > radius)
                         continue;
                     if (level().getBlockState(pos).isAir())
                         continue;

@@ -38,6 +38,7 @@ public class BigBallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<CompoundTag> SPELL = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final EntityDataAccessor<Float> MAX_POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
     private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(BigBallEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
@@ -80,12 +81,15 @@ public class BigBallEntity extends ThrowableProjectile {
         if (caster != null && getOwner() != null) {
             var ballData = new BallData(caster.getEyePosition().add(caster.getLookAngle().scale(3)), 2);
             setPower(ballData.power());
-            setPos(ballData.pos().subtract(0, ballData.power() / 2, 0));
+            setPos(ballData.pos().subtract(0, ballData.power() / 8, 0));
         }
-        if (caster != null && getOwner() == null && getDeltaMovement().length() < 0.02) {
-            entityData.set(THROWN, true);
-            onHit(position());
+        if (caster != null && getOwner() != null) {
+            // Рассчитываем центр шара
+            Vec3 centerPos = caster.getEyePosition().add(caster.getLookAngle().scale(3));
+            setPower(2); // Фиксированный размер при владельце
+            setPos(centerPos); // Устанавливаем центр
         }
+
         super.tick();
         if (entityData.get(POWER) != lastPower && !this.level().isClientSide) {
             lastPower = entityData.get(POWER);
@@ -129,7 +133,6 @@ public class BigBallEntity extends ThrowableProjectile {
             return null;
         return renderBallData;
     }
-
 
     public BigBallSpellShapeEntity getOwner() {
         var superOwner = super.getOwner();
