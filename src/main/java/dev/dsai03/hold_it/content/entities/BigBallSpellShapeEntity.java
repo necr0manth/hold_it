@@ -56,11 +56,6 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     @Override
-    public boolean isPrepared() {
-        return true;
-    }
-
-    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         ballRef = Entity2EntityReference.createAndDefine(BALL, "big_ball", this);
@@ -155,7 +150,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         if (level().isClientSide)
             return;
         var ball = ballRef.get();
-        ball.shoot(ball.position().subtract(getCaster().getEyePosition()).normalize());
+        ball.shoot(ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize());
     }
 
     @Override

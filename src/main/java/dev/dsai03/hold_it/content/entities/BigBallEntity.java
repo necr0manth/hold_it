@@ -79,15 +79,7 @@ public class BigBallEntity extends ThrowableProjectile {
     public void tick() {
         var caster = getCaster();
         if (caster != null && getOwner() != null) {
-            var ballData = new BallData(caster.getEyePosition().add(caster.getLookAngle().scale(3)), 2);
-            setPower(ballData.power());
-            setPos(ballData.pos().subtract(0, ballData.power() / 8, 0));
-        }
-        if (caster != null && getOwner() != null) {
-            // Рассчитываем центр шара
-            Vec3 centerPos = caster.getEyePosition().add(caster.getLookAngle().scale(3));
-            setPower(2); // Фиксированный размер при владельце
-            setPos(centerPos); // Устанавливаем центр
+            setPos(caster.getEyePosition().add(caster.getLookAngle().scale(3)).subtract(0, entityData.get(POWER) / 2, 0));
         }
 
         super.tick();
@@ -121,7 +113,8 @@ public class BigBallEntity extends ThrowableProjectile {
                 renderBallData = null;
             else {
                 var partialTick = Minecraft.getInstance().getFrameTime();
-                renderBallData = new BallData(new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ())).add(caster.getViewVector(partialTick).scale(3)), 2);
+                float power = entityData.get(POWER);
+                renderBallData = new BallData(new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ())).add(caster.getViewVector(partialTick).scale(3)), power);
             }
         } else
             renderBallData = new BallData(new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0), entityData.get(POWER));
