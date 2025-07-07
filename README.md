@@ -1,3 +1,26 @@
+# Mana and Artifice addon "Hold it!"
+![Icon](https://gitlab.pg.innopolis.university/my-awesome-group1/my-awesome-mna-addon/-/raw/main/logo.jpg?ref_type=heads)
+## About "Hold it"
+Our addon is a modification for "Mana and Artifice". Addon adds chargeable spells. 
+Link to our product - (there suppose to be a link to curseforge page)   
+Link to DEMO video - https://www.youtube.com/watch?v=ozBsxAzulP0
+# Body
+## Project goals and description
+Our goal is to create various chargeable spell shapes that original mod does not have and show how powerful chargeable 
+magic is. 
+### Description
+Our addon has 8 different spell shapes that players can obtain during their gameplay.
+Our spell shapes have different modifiers that players can use to make them more or less powerful. All components of 
+"Mana and Artifice" mod can be applied to our spell shapes.
+## Feature Roadmap
+In future we are planning to add more spell shapes and probably a structure where players can find our spells.
+## Usage instructions and installation
+To use our addon firstly you should have 1.20.1 minecraft neoForge version downloaded 
+secondly you should have 1.20.1 "Mana and artifice" mod downloaded and be in .minecraft/mods folder,
+and after you have all of that you simply need to download addon from curseforge 
+and drop it into .minecraft/mods folder. P.S to access .minecraft/mods folder you should click win + r combination
+then write  %appdata% and here you will find .minecraft folder.
+# Hyperlinks and etc.
 ## Development
 ### Kanban board 
 link - https://app.weeek.net/ws/822843/shared/board/0EKi1Fon4zzTeWl31cqlKp85NG6mgyAT
