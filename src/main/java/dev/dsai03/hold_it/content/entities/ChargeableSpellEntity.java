@@ -54,6 +54,7 @@ public abstract class ChargeableSpellEntity extends Entity {
         DEAD_CASTER,
         NOT_ENOUGH_MANA,
         INVALID_CASTER,
+        STOP_CASTING,
         OTHER
     }
 
@@ -219,34 +220,18 @@ public abstract class ChargeableSpellEntity extends Entity {
         stopCast();
     }
 
-    /**
-     * Определяет можно ли кастовать спелл. Если спелл можно кастовать сразу без длительного удержания, то пусть просто всегда возвращает true
-     */
     public boolean isPrepared() {
         return true;
     }
 
-    /**
-     * Вызывается внутри обычного тика при условии, что спелл валиден и всё ок
-     */
     protected abstract void spellTick();
 
-    /**
-     * Разрешаем ли мы кастовать спелл при недостаточном количестве маны
-     */
     public boolean allowCastWhenNotEnoughMana() {
         return false;
     }
 
-    /**
-     * Сколько маны мы запрашиваем у игрока (отображется в мана баре и потребляется при касте)
-     */
     public abstract float getRequestedManaCost();
 
-    /**
-     * Если можем кастовать при недостаточной мане, то минимум из маны игрока и требуемой мане (т.е. сколько маны будет по факту потрачено)
-     * Если нельзя кастовать при недостаточной мане, то просто требуемая мана
-     */
     public float getManaCost() {
         if (allowCastWhenNotEnoughMana())
             return Math.min(getRequestedManaCost(), getCasterMana());

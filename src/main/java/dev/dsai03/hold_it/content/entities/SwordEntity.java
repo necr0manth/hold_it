@@ -49,8 +49,6 @@ public class SwordEntity extends ThrowableProjectile {
     private SpellHolder spellHolder;
     private Random random = new Random();
     private UUID targetUUID;
-    private static final double HOMING_STRENGTH = 0.15;
-    private static final int HOMING_DELAY = 5;
 
     public SwordEntity(EntityType<? extends SwordEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -79,21 +77,34 @@ public class SwordEntity extends ThrowableProjectile {
             return;
         }
 
+        if (entityData.get(THROWN)) {
+            Vec3 motion = getDeltaMovement();
+            setDeltaMovement(motion.add(0, -0.045, 0));
+        }
+
         if (!entityData.get(THROWN)) return;
-        if (targetUUID != null && tickCount > HOMING_DELAY) {
-            LivingEntity target = null;
-            for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(16))) {
-                if (entity.getUUID().equals(targetUUID)) {
-                    if (entity == getCaster()) continue;
-                    target = entity;
-                    break;
-                }
+        LivingEntity target = null;
+        for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(64)).stream().sorted((e1, e2)-> Float.compare( e1.distanceTo(this),e2.distanceTo(this))).toList()) {
+            if (entity == getCaster()) continue;
+            target = entity;
+            break;
+        }
+        if(target ==null)
+            return;
+        if (target.isAlive()) {
+            Vec3 targetPos = target.getEyePosition().add(0, -0.3, 0);
+            Vec3 toTarget = targetPos.subtract(position());
+            Vec3 portalForward = getOwner() instanceof PortalEntity portal ? portal.getLookAngle().normalize() : getDeltaMovement().normalize();
+            double dot = portalForward.dot(toTarget.normalize());
+            if (dot > 0) { // цель впереди портала
+                Vec3 currentMotion = getDeltaMovement();
+                Vec3 desiredMotion = toTarget.normalize().scale(currentMotion.length());
+                Vec3 smoothed = currentMotion.lerp(desiredMotion, 0.15);
+                setDeltaMovement(smoothed);
+                setYRot((float)(Mth.atan2(smoothed.z, smoothed.x) * (180F / Math.PI)) - 90F);
+                setXRot((float)(-Mth.atan2(smoothed.y, Math.sqrt(smoothed.x * smoothed.x + smoothed.z * smoothed.z)) * (180F / Math.PI)));
             }
-            if (target != null && target.isAlive()) {
-                Vec3 toTarget = target.getBoundingBox().getCenter().subtract(position()).normalize();
-                Vec3 newMotion = getDeltaMovement().add(toTarget.scale(HOMING_STRENGTH)).normalize().scale(0.8);
-                setDeltaMovement(newMotion);
-            }
+            // иначе летим прямо
         }
         if (getDeltaMovement().length() < 0.01) {
             onHit(position());
@@ -105,9 +116,14 @@ public class SwordEntity extends ThrowableProjectile {
         }
     }
 
+    private Vec3 predictTarget(LivingEntity target, Vec3 basePos) {
+        Vec3 targetVel = target.getDeltaMovement();
+        double predictionTime = 0.5;
+        return basePos.add(targetVel.scale(predictionTime / 0.05));
+    }
+
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        // Создаем частицы следа меча
         if (tickCount % 2 == 0) {
             Affinity affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
             Vec3 trailPos = position().add(
@@ -136,7 +152,7 @@ public class SwordEntity extends ThrowableProjectile {
 
     @Override
     public EntityDimensions getDimensions(Pose pose) {
-        return EntityDimensions.scalable(0.25f, 0.25f);
+        return EntityDimensions.scalable(0.5f, 0.5f);
     }
 
     @Override
@@ -197,9 +213,10 @@ public class SwordEntity extends ThrowableProjectile {
         }
         Entity hit = hitResult.getEntity();
         if (hit instanceof LivingEntity living) {
+            float baseDamage = (0.05f) * getPower(); // ещё меньше урон
+            living.hurt(level().damageSources().magic(), baseDamage);
             SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
             SpellContext context = new SpellContext(level(), spellHolder.getSpell());
-            float power = getPower() * 1.5f;
             SpellUtils.cast(spellHolder.getSpell(), source, new SpellTarget(living), context);
         }
         discard();
@@ -215,10 +232,7 @@ public class SwordEntity extends ThrowableProjectile {
 
         var targets = new ArrayList<SpellTarget>();
         var power = entityData.get(POWER);
-        
-        // Поиск целей в радиусе
 
-        // Поиск блоков в радиусе
         for (int i = -Mth.ceil(power); i <= Mth.ceil(power); i++) {
             for (int j = -1; j <= Mth.ceil(power); j++) {
                 for (int k = -Mth.ceil(power); k <= Mth.ceil(power); k++) {
@@ -244,7 +258,7 @@ public class SwordEntity extends ThrowableProjectile {
 
     public void shoot(Vec3 direction) {
         entityData.set(THROWN, true);
-        setDeltaMovement(direction.normalize().scale(0.7)); // скорость, как хочешь
+        setDeltaMovement(direction.normalize().scale(0.15)); // ещё медленнее
         setYRot((float)(Mth.atan2(direction.z, direction.x) * (180F / Math.PI)) - 90F);
         setXRot((float)(-Mth.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z)) * (180F / Math.PI)));
     }

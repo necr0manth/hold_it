@@ -1,16 +1,26 @@
 package dev.dsai03.hold_it.content.entities;
 
 import com.mna.api.spells.base.ISpellDefinition;
+import com.mna.api.spells.targeting.SpellContext;
+import com.mna.api.spells.targeting.SpellSource;
+import com.mna.api.spells.targeting.SpellTarget;
+import dev.dsai03.hold_it.util.SpellUtils;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -32,11 +42,15 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
     }
 
     public static float chargeTime() {
-        return 5.0f; // 5 секунд зарядки
+        return 5.0f;
     }
 
     public static float maxChargeTime() {
-        return 15.0f; // Максимум 15 секунд зарядки
+        return 15.0f;
+    }
+
+    public static float radius() {
+        return 8.0f;
     }
 
     private void spawnPortal() {
@@ -44,17 +58,36 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
         if (getCaster() == null) return;
         Vec3 offset;
         int attempts = 0;
+        double minY = getCaster().getEyePosition().y - getCaster().position().y; // смещение глаз относительно позиции
+        Vec3 look = getCaster().getLookAngle().normalize();
         do {
-            double angle = random.nextDouble() * Math.PI * 2;
+            double angle = random.nextDouble() * (2.0/3.0 * Math.PI) - (1.0/3.0 * Math.PI); // -60°..+60°
+            double baseYaw = Math.atan2(look.z, look.x);
+            double portalYaw = baseYaw + angle;
             double distance = 3.0 + random.nextDouble() * 4.0;
-            double height = -1.0 + random.nextDouble() * 3.0;
-            offset = new Vec3(Math.cos(angle) * distance, height, Math.sin(angle) * distance);
+            double height = minY + random.nextDouble() * 0.5; // на уровне глаз и чуть выше
+            offset = new Vec3(Math.cos(portalYaw) * distance, height, Math.sin(portalYaw) * distance);
             attempts++;
-        } while (offset.length() < 2.5 && attempts < 10);
+        } while ((offset.length() < 2.5 || offset.y < minY) && attempts < 10);
         Vec3 portalPos = getCaster().position().add(offset);
+        
+        // Проверяем, не слишком ли близко к существующим порталам
+        boolean tooClose = false;
+        for (PortalEntity existingPortal : portals) {
+            if (existingPortal != null && existingPortal.isAlive()) {
+                double distance = portalPos.distanceTo(existingPortal.position());
+                if (distance < 2.0) { // минимальное расстояние между порталами
+                    tooClose = true;
+                    break;
+                }
+            }
+        }
+        if (tooClose) return; // не создаем портал, если он слишком близко
+        
         float portalSize = 1.0f + (getLifetime() / chargeTime()) * 0.5f;
         int swordCount = Math.min(10, 3 + (int) ((getLifetime() / chargeTime()) * 4));
         PortalEntity portal = new PortalEntity(level(), getCaster(), getSpell(), portalPos, portalSize, swordCount);
+        portal.lookAt(EntityAnchorArgument.Anchor.FEET, portalPos.add(getCaster().getLookAngle()));
         level().addFreshEntity(portal);
         portals.add(portal);
         level().playSound(null, portalPos.x, portalPos.y, portalPos.z, SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -62,20 +95,50 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void onInterrupt(InterruptReason reason) {
-        for (PortalEntity portal : portals) {
-            if (portal != null && portal.isAlive()) portal.discard();
+        if (reason == InterruptReason.STOP_CASTING) {
+            setCanLaunch(true);
+        } else {
+            for (PortalEntity portal : portals) {
+                if (portal != null && portal.isAlive()) portal.discard();
+            }
+            portals.clear();
         }
-        portals.clear();
+    }
+
+    public float getMaxManaCost() {
+        return 1000;
     }
 
     @Override
-    public float getManaCost() {
-        return Math.min(1, getLifetime() / chargeTime()) * 500; // Максимум 500 маны
+    public float getRequestedManaCost() {
+        return Math.min(1, getLifetime() / chargeTime()) * getMaxManaCost();
     }
 
-    @Override
-    protected void applySpell(float requestedManaCost, float casterMana) {
 
+    protected void applySpell(float manaCost, float casterMana) {
+        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), manaCost, false);
+    }
+
+    protected List<SpellTarget> target() {
+        var targets = new ArrayList<SpellTarget>();
+        level().getEntities(getCaster(), getCaster().getBoundingBox().inflate(radius()), (Entity e) -> e != this && e.position().distanceTo(getCaster().position()) < radius()).stream().map(SpellTarget::new).forEach(targets::add);
+        for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
+            for (int j = -1; j <= Mth.ceil(radius()); j++) {
+                for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
+                    var pos = BlockPos.containing(getCaster().position().add(i, j, k));
+                    if (pos.getCenter().distanceTo(getCaster().position()) > radius())
+                        continue;
+                    if (level().getBlockState(pos).isAir())
+                        continue;
+                    if (j == -1)
+                        targets.add(new SpellTarget(pos, Direction.UP));
+                    else
+                        targets.add(new SpellTarget(pos, null));
+                }
+            }
+        }
+        Collections.shuffle(targets);
+        return targets;
     }
 
     @Override
@@ -89,18 +152,12 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void spellTick() {
         if (getLifetime() >= maxChargeTime()) return;
-        if (getLifetime() >= chargeTime())
-            setCanLaunch(true);
+        portals.removeIf(p -> p == null || !p.isAlive());
         portalSpawnDelay++;
         if (portalSpawnDelay >= PORTAL_SPAWN_INTERVAL && portals.size() < MAX_PORTALS) {
             spawnPortal();
             portalSpawnDelay = 0;
         }
-    }
-
-    @Override
-    public float getRequestedManaCost() {
-        return 0;
     }
 
     public void setCanLaunch(boolean value) {

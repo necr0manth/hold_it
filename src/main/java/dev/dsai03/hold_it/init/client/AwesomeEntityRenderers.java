@@ -4,6 +4,7 @@ import dev.dsai03.hold_it.content.client.entity_renderers.BallEntityRenderer;
 import dev.dsai03.hold_it.content.client.entity_renderers.BigBallEntityRenderer;
 import dev.dsai03.hold_it.content.client.entity_renderers.EmptyEntityRenderer;
 import dev.dsai03.hold_it.content.client.entity_renderers.PortalEntityRenderer;
+import dev.dsai03.hold_it.content.client.entity_renderers.SwordEntityRenderer;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,6 +27,6 @@ public class AwesomeEntityRenderers {
 		EntityRenderers.register(AwesomeEntityTypes.BIG_BALL_ENTITY_TYPE.get(), BigBallEntityRenderer::new);
 		EntityRenderers.register(AwesomeEntityTypes.PORTAL_ENTITY_TYPE.get(), PortalEntityRenderer::new);
 		EntityRenderers.register(AwesomeEntityTypes.PORTAL_SWORD_SHAPE.get(), EmptyEntityRenderer::new);
-		EntityRenderers.register(AwesomeEntityTypes.SWORD_ENTITY_TYPE.get(), EmptyEntityRenderer::new);
+		EntityRenderers.register(AwesomeEntityTypes.SWORD_ENTITY_TYPE.get(), SwordEntityRenderer::new);
 	}
 }
