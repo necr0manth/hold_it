@@ -41,6 +41,8 @@ public class SphereEntity extends Projectile {
     private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(SphereEntity.class);
     private static final EntityDataAccessor<Float> MAX_POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> MAX_MAGNITUDE = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> MAX_DELAY = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> MAX_RADIUS = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
     private boolean isStationary = false;
     public Vec3 targetPosition;
     private float lastPower = -1;
@@ -52,7 +54,7 @@ public class SphereEntity extends Projectile {
         setNoGravity(true);
     }
 
-    public SphereEntity(Level level, SpellSevenShapeEntity owner, float magnitude, float power) {
+    public SphereEntity(Level level, SpellSevenShapeEntity owner, float magnitude, float power, float delay, float radius) {
         this(AwesomeEntityTypes.SPHERE_ENTITY_TYPE.get(), level);
         setOwner(owner);
         casterRef.set(owner.getCaster());
@@ -60,6 +62,8 @@ public class SphereEntity extends Projectile {
         setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
         entityData.set(MAX_MAGNITUDE, magnitude);
         entityData.set(MAX_POWER, power);
+        entityData.set(MAX_DELAY, delay);
+        entityData.set(MAX_RADIUS, radius);
     }
 
 
@@ -78,7 +82,7 @@ public class SphereEntity extends Projectile {
                 timer++;
                 setDeltaMovement(Vec3.ZERO);
                 float powerFactor = getPower() / entityData.get(MAX_POWER);
-                int dynamicDelay = 5 + (int) (40 * powerFactor);
+                float dynamicDelay = (5 + (int) (40 * powerFactor)) * entityData.get(MAX_DELAY);
                 if (timer >= dynamicDelay) {
                     explode();
                     discard();
@@ -108,8 +112,8 @@ public class SphereEntity extends Projectile {
 
         List<SpellTarget> targets = new ArrayList<SpellTarget>();
         float powerFactor = getPower() / entityData.get(MAX_POWER);
-        float dynamicRadius = 1 + (7 * powerFactor);
-
+        float dynamicRadius = (5 * powerFactor) * entityData.get(MAX_RADIUS);
+//
         level().getEntities(getOwner(), this.getBoundingBox().inflate(dynamicRadius),
                         (Entity e) -> e != this && e.position().distanceTo(this.position()) < dynamicRadius)
                 .stream().map(SpellTarget::new).forEach(targets::add);
@@ -130,7 +134,7 @@ public class SphereEntity extends Projectile {
             }
         }
         Collections.shuffle(targets);
-        var targetCount = (int) (entityData.get(MAX_MAGNITUDE) * getPower() / entityData.get(MAX_POWER));
+        var targetCount = (int) (entityData.get(MAX_MAGNITUDE) * getPower() * entityData.get(MAX_RADIUS) / entityData.get(MAX_POWER));
         targets = targets.subList(0, Math.min(targetCount, targets.size()));
         for (var target : targets) {
             SpellSource source = new SpellSource(casterRef.get(), InteractionHand.MAIN_HAND);
@@ -166,8 +170,8 @@ public class SphereEntity extends Projectile {
         float radRotation = globalRotation * ((float) Math.PI / 180f);
 
         int particleCount = isStationary ?
-                (int) (20 + 45 * powerFactor) :
-                (int) (15 + 35 * powerFactor);
+                (int) (10 + 75 * powerFactor) :
+                (int) (5 + 25 * powerFactor);
 
         for (int i = 0; i < particleCount; i++) {
             if (isStationary) {
@@ -238,7 +242,7 @@ public class SphereEntity extends Projectile {
                         affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
                         position().subtract(pos).normalize().scale(0.03),
                         ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(80))
+                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(70))
                 );
             }
         }
@@ -256,7 +260,7 @@ public class SphereEntity extends Projectile {
                         ),
                         Vec3.ZERO,
                         ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(70))
+                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(60))
                 );
             }
 
@@ -307,6 +311,8 @@ public class SphereEntity extends Projectile {
         entityData.define(POWER, 0.0f);
         entityData.define(MAX_POWER, 0.0f);
         entityData.define(MAX_MAGNITUDE, 0.0f);
+        entityData.define(MAX_DELAY, 0.0f);
+        entityData.define(MAX_RADIUS, 0.0f);
         spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
         casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
     }
@@ -329,6 +335,8 @@ public class SphereEntity extends Projectile {
         compound.putFloat("power", this.entityData.get(POWER));
         compound.putFloat("maxPower", this.entityData.get(MAX_POWER));
         compound.putFloat("maxMagnitude", this.entityData.get(MAX_MAGNITUDE));
+        compound.putFloat("maxDelay", this.entityData.get(MAX_DELAY));
+        compound.putFloat("maxRadius", this.entityData.get(MAX_RADIUS));
         compound.putBoolean("isStationary", isStationary);
         if (targetPosition != null) {
             compound.putDouble("targetX", targetPosition.x);
@@ -349,8 +357,12 @@ public class SphereEntity extends Projectile {
         }
         var maxPower = pCompound.getFloat("maxPower");
         var maxMagnitude = pCompound.getFloat("maxMagnitude");
+        var maxDelay = pCompound.getFloat("maxDelay");
+        var maxRadius = pCompound.getFloat("maxRadius");
         entityData.set(MAX_POWER, maxPower);
         entityData.set(MAX_MAGNITUDE, maxMagnitude);
+        entityData.set(MAX_DELAY, maxDelay);
+        entityData.set(MAX_RADIUS, maxRadius);
 
         spellHolder.load(pCompound);
         casterRef.load(pCompound);

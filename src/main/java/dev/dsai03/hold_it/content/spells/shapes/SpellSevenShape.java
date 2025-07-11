@@ -13,7 +13,8 @@ import net.minecraft.world.level.Level;
 
 public class SpellSevenShape extends BaseChargeableSpellShape<SpellSevenShapeEntity> {
     public SpellSevenShape(ResourceLocation guiIcon) {
-        super(guiIcon, new AttributeValuePair(Attribute.MAGNITUDE, 10, 1, 100, 1, 1), new AttributeValuePair(Attribute.RADIUS, 2, 1, 10, 0.1f, 1));
+        super(guiIcon, new AttributeValuePair(Attribute.MAGNITUDE, 10, 1, 100, 5, 1),
+                new AttributeValuePair(Attribute.RADIUS, 2, 1, 4, 0.1f, 1), new AttributeValuePair(Attribute.DELAY, 1, 1, 10, 1, 1));
     }
 
     @Override
@@ -29,7 +30,7 @@ public class SpellSevenShape extends BaseChargeableSpellShape<SpellSevenShapeEnt
 
     @Override
     public float initialComplexity() {
-        return 25;
+        return 20;
     }
 
     @Override
@@ -38,7 +39,7 @@ public class SpellSevenShape extends BaseChargeableSpellShape<SpellSevenShapeEnt
     }
 
     private void adjustOnTooltipAndCrafting(SpellAdjustingContext context) {
-        context.spell.setManaCost(context.spell.getShape().getValue(Attribute.MAGNITUDE) * context.spell.getManaCost());
+        context.spell.setManaCost((context.spell.getShape().getValue(Attribute.MAGNITUDE) + context.spell.getShape().getValue(Attribute.RADIUS)) * context.spell.getManaCost());
     }
 
     @Override
