@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
@@ -24,6 +25,7 @@ import net.minecraft.world.entity.EntityType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
@@ -40,19 +42,23 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         super(AwesomeEntityTypes.BIG_BALL_SPELL_SHAPE.get(), caster, spell, world);
     }
 
-    public static final float defaultPower = 0.7f;
-    public static final float distanceToProjectile = 2.5f;
+    public static final float defaultPower = 3f;
+    public static final float distanceToProjectile = 60.5f;
 
     public static float radius() {
-        return 7;
+        return 10f;
+    }
+
+    public float magnitude() {
+        return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.MAGNITUDE);
     }
 
     public static float chargeTime() {
-        return 7;
+        return 3f;
     }
 
     public static float maxChargeTime() {
-        return 30;
+        return 20;
     }
 
     @Override
@@ -114,8 +120,13 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
 
     @Override
     public float getRequestedManaCost() {
-        return 0;
+        return Math.min(getCharge() * magnitude() * getCastingSpellManaCost(), getCasterMana());
     }
+
+    private float getCharge() {
+        return Math.max(getLifetime() / chargeTime(), 1);
+    }
+
 
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
