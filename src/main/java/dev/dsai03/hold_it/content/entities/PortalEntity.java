@@ -38,7 +38,7 @@ public class PortalEntity extends Entity {
     private SpellHolder spellHolder;
     private Random random = new Random();
     private int launchDelay = 0;
-    private static final int LAUNCH_INTERVAL = 20; // 1 секунда между запусками мечей
+    private static final int LAUNCH_INTERVAL = 20;
     public boolean canLaunch = false;
     private static final int MAX_PORTALS = 4;
 
@@ -105,20 +105,25 @@ public class PortalEntity extends Entity {
         sword.setPos(position());
         sword.setPower(getSize() * 0.5f);
         if (getCaster() != null) {
-            LivingEntity target = findNearestTarget();
-            if (target != null) {
-                sword.setTarget(target);
-            }
-            sword.shoot(getCaster().getLookAngle());
+            Vec3 forward = getLookAngle().normalize();
+            double spread = 0.12;
+            double angleOffset = (random.nextDouble() - 0.5) * spread;
+            double baseYaw = Math.atan2(forward.z, forward.x);
+            double newYaw = baseYaw + angleOffset;
+            Vec3 launchDir = new Vec3(Math.cos(newYaw), forward.y, Math.sin(newYaw)).normalize();
+            sword.shoot(launchDir);
         }
         level().addFreshEntity(sword);
         setSwordsLaunched(getSwordsLaunched() + 1);
     }
 
     private LivingEntity findNearestTarget() {
-        return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(16),
-                e -> !e.isAlliedTo(getCaster()) && e.isAlive()).stream()
-                .min(Comparator.comparingDouble(e -> e.distanceTo(this))).orElse(null);
+        return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(24), // Увеличен радиус поиска
+                e -> e != getCaster() && e.isAlive() && !e.isAlliedTo(getCaster()) && 
+                     e instanceof net.minecraft.world.entity.Mob) // Ищем только мобов для лучшего таргетинга
+                .stream()
+                .min(Comparator.comparingDouble(e -> e.distanceTo(this)))
+                .orElse(null);
     }
 
     @OnlyIn(Dist.CLIENT)
