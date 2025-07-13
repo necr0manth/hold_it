@@ -74,6 +74,7 @@ public class SphereEntity extends Projectile {
     }
 
     int timer = 0;
+    private double globalRotationAngle = 0;
 
     @Override
     public void tick() {
@@ -93,6 +94,7 @@ public class SphereEntity extends Projectile {
         }
 
         super.tick();
+        globalRotationAngle += 0.004;
 
         this.setPos(position().add(getDeltaMovement()));
 
@@ -163,7 +165,7 @@ public class SphereEntity extends Projectile {
         }
 
         Random random = new Random();
-        float coreRadius = 0.05f + 0.95f * powerFactor;
+        float coreRadius = 0.05f + 1.95f * powerFactor;
 
         float rotationSpeed = isStationary ? 3.0f : 1.5f;
         float globalRotation = (tickCount * rotationSpeed) % 360;
@@ -171,7 +173,7 @@ public class SphereEntity extends Projectile {
 
         int particleCount = isStationary ?
                 (int) (10 + 75 * powerFactor) :
-                (int) (5 + 25 * powerFactor);
+                (int) (5 + 55 * powerFactor);
 
         for (int i = 0; i < particleCount; i++) {
             if (isStationary) {
@@ -196,85 +198,125 @@ public class SphereEntity extends Projectile {
                 speed *= (0.9 + random.nextDouble() * 0.2);
 
                 ParticleUtils.addParticle(
-                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
+                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
+                                affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(155,38,182) :
+                                        affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128,5,0)
+                                : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
                         pos,
                         tangent.scale(speed),
                         ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(125))
+                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(75))
                 );
             } else {
-                int armIndex = random.nextInt(3);
-                double armPhase = armIndex * (2 * Math.PI / 3);
+                for (int i3 = 0; i3 < 3; i3++) {
+                    int armIndex = random.nextInt(5);
+                    double armPhase = armIndex * (2 * Math.PI / 5) + globalRotationAngle;
 
-                double progress = random.nextDouble();
-                double distance = 0.5 + 5.0 * progress;
-                double angle = armPhase + 2.5 * progress * Math.PI * 2;
+                    int segmentCount = 12;
+                    int segment = random.nextInt(segmentCount);
+                    double progress = segment * (0.84 / (segmentCount - 1));
 
-                Vec3 pos = position().add(
-                        distance * Math.cos(angle),
-                        (random.nextDouble() - 0.5) * 0.5,
-                        distance * Math.sin(angle)
-                );
+                    double distance = 0.7 + 5.0 * progress;
+                    double angle = armPhase + 2.2 * progress * Math.PI * 2;
 
-                Vec3 toCenter = position().subtract(pos).normalize().scale(0.2);
-                Vec3 tangent = new Vec3(-pos.z + position().z, 0, pos.x - position().x).normalize();
-                Vec3 velocity = toCenter.add(tangent.scale(0.1));
+                    Vec3 pos = position().add(
+                            distance * Math.cos(angle),
+                            (random.nextDouble() - 0.5) * 0.1,
+                            distance * Math.sin(angle)
+                    );
 
-                ParticleUtils.addParticle(
-                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
-                        velocity,
-                        ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(125))
-                );
+                    Vec3 toCenter = position().subtract(pos).normalize().scale(0.12);
+                    Vec3 tangent = new Vec3(-pos.z + position().z, 0, pos.x - position().x).normalize();
+                    Vec3 velocity = toCenter.add(tangent.scale(0.000001));
+
+                    // ============= ПОВОРОТ ВЕКТОРА СКОРОСТИ =============
+                    final double rotationAngle = -0.9;
+                    final double cosAngle = Math.cos(rotationAngle);
+                    final double sinAngle = Math.sin(rotationAngle);
+
+                    double rotatedX = velocity.x * cosAngle - velocity.z * sinAngle;
+                    double rotatedZ = velocity.x * sinAngle + velocity.z * cosAngle;
+                    Vec3 rotatedVelocity = new Vec3(rotatedX, velocity.y, rotatedZ);
+                    // ====================================================
+
+                    float particleSize = affinity == Affinity.WIND ? 0.06f : 0.07f;
+
+                    ParticleUtils.addParticle(
+                            affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(particleSize).setColor(177, 201, 223) :
+                            affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(particleSize).setColor(155,38,182) :
+                                    affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(particleSize).setColor(128,5,0) :
+                                            spellHolder.getSpell().colorParticle(
+                                    new MAParticleType(ParticleUtils.getParticleType(affinity)),
+                                    getOwner()).setScale(particleSize),
+                            pos,
+                            rotatedVelocity,
+                            ParticleUtils.EMPTY_TICKER,
+                            ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(165))
+                    );
+                }
             }
 
-            if (random.nextFloat() < (isStationary ? 0.5f : 0.3f)) {
-                double theta = random.nextDouble() * Math.PI;
-                double phi = random.nextDouble() * Math.PI * 2;
-                double r = coreRadius * (0.9 + 0.2 * random.nextDouble());
+            if (random.nextFloat() < (isStationary ? 0.5f : 0.3f)) { //сфера
+                for (int i2 = 0; i2 < 5; i2++) {
+                    double theta = random.nextDouble() * Math.PI;
+                    double phi = random.nextDouble() * Math.PI * 2;
+                    double r = coreRadius * (0.5 + 0.2 * random.nextDouble());
 
-                Vec3 pos = position().add(
-                        r * Math.sin(theta) * Math.cos(phi),
-                        r * Math.cos(theta),
-                        r * Math.sin(theta) * Math.sin(phi)
-                );
-                ParticleUtils.addParticle(
-                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
-                        position().subtract(pos).normalize().scale(0.03),
-                        ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(70))
-                );
+                    Vec3 pos = position().add(
+                            r * Math.sin(theta) * Math.cos(phi),
+                            r * Math.cos(theta),
+                            r * Math.sin(theta) * Math.sin(phi)
+                    );
+                    ParticleUtils.addParticle(
+                            affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
+                                    affinity == Affinity.FIRE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(255,43,20), getOwner()) :
+                                            affinity == Affinity.ICE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(111,122,159), getOwner()) :
+                                                    affinity == Affinity.ARCANE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128,49,167), getOwner()) :
+                                                            affinity == Affinity.LIGHTNING ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128,49,167), getOwner()) :
+                                                                    affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128,5,0) :
+                                                                            affinity == Affinity.EARTH ? new MAParticleType(ParticleInit.DUST.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(220,88,42) :
+                                                    spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
+                            position().subtract(pos).normalize().scale(0.03),
+                            ParticleUtils.EMPTY_TICKER,
+                            affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(325)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(60))
+                    );
+                }
             }
         }
 
-        if (tickCount % 2 == 0) {
+        if (tickCount % 2 == 0) { //точка
             for (int i = 0; i < (1); i++) {
                 double angle = i * (Math.PI / 2);
                 double offset = coreRadius * 0.001;
 
                 ParticleUtils.addParticle(
-                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
+                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
+                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(158,5,0) :
+                                spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
                                 offset * Math.cos(angle),
                                 (random.nextDouble() - 0.5) * 0.1,
                                 offset * Math.sin(angle)
                         ),
                         Vec3.ZERO,
                         ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(60))
+                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(50))
                 );
             }
 
-            if (coreRadius > 0.3f) {
+            if (coreRadius > 0.3f) { //кольца
                 int rings = 1;
                 for (int r = 0; r < rings; r++) {
-                    double radius = coreRadius * (1.4 + r * 0.4);
+                    double radius = coreRadius * (0.4 + r * 0.4);
                     int particles = isStationary ? 18 + r * 6 : 12 + r * 4;
 
                     for (int i = 0; i < particles; i++) {
                         double angle = i * (2 * Math.PI / particles) + radRotation * 0.7;
 
                         ParticleUtils.addParticle(
-                                affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
+                                affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
+                                        affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(155,38,182) :
+                                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128,5,0) :
+                                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
                                         radius * Math.cos(angle),
                                         (random.nextDouble() - 0.5) * 0.2,
                                         radius * Math.sin(angle)

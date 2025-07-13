@@ -26,7 +26,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
 
     public static final float defaultPower = 0.7f;
-    public static final float distanceToProjectile = 2.5f;
+    public static final float distanceToProjectile = 3.5f;
 
     public float radius() {
         return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.RADIUS);
