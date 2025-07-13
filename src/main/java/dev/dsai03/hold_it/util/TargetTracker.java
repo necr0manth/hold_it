@@ -6,15 +6,24 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
+import java.util.Comparator;
 import java.util.function.Predicate;
 
 public class TargetTracker {
-    public static class TimeCalculator{
+    public static class TimeCalculator {
+        public static double calculateTime(Vector3f objectPosition, Vector3f targetPosition, Vector3f velocity, double angularVelocity) {
+            var localTargetPosition = new Vector3f(targetPosition).sub(objectPosition);
+            var v = velocity.length();
+            var y = localTargetPosition.dot(velocity) / v;
+            var x = localTargetPosition.cross(velocity, new Vector3f()).length() / v;
+            return Math.min(calculateTime(x, y, angularVelocity, v), calculateTime(x, y, -angularVelocity, v));
+        }
+
         public static double calculateTime(double x, double y, double o, double v) {
             var t = t1(x, y, o, v);
             var r = v / o;
@@ -46,13 +55,14 @@ public class TargetTracker {
             return dx * vx + dy * vy >= 0;
         }
     }
+
     public static class DataAccessor {
         public final Entity2EntityReference.DataAccessor TARGET;
-        public final EntityDataAccessor<Float> HOMING_STRENGTH;
+        public final EntityDataAccessor<Float> TURN_RATE;
 
-        public DataAccessor(Entity2EntityReference.DataAccessor TARGET, EntityDataAccessor<Float> HOMING_STRENGTH) {
+        public DataAccessor(Entity2EntityReference.DataAccessor TARGET, EntityDataAccessor<Float> TURN_RATE) {
             this.TARGET = TARGET;
-            this.HOMING_STRENGTH = HOMING_STRENGTH;
+            this.TURN_RATE = TURN_RATE;
         }
 
         public DataAccessor(Class<? extends Entity> entityClass) {
@@ -69,6 +79,7 @@ public class TargetTracker {
     private final Predicate<Entity> filter;
     private final Entity entity;
     private final String name;
+    private double speed = -1;
 
 
     public TargetTracker(DataAccessor dataAccessor, String name, Predicate<Entity> filter, Entity entity) {
@@ -87,36 +98,36 @@ public class TargetTracker {
 
     public void define() {
         targetRef.define();
-        entity.getEntityData().define(dataAccessor.HOMING_STRENGTH, 0f);
+        entity.getEntityData().define(dataAccessor.TURN_RATE, 0f);
     }
 
     private void target() {
-        setTarget(entity.level().getEntities(entity, entity.getBoundingBox().inflate(16.0F), (e) -> {
-            ClipContext ctx = new ClipContext(entity.position(), e.position().add(0.0F, (e.getBbHeight() / 2.0F), 0.0F), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity);
+        setTarget(entity.level().getEntities(entity, entity.getBoundingBox().inflate(40), (e) -> {
+            ClipContext ctx = new ClipContext(entity.position(), e.getBoundingBox().getCenter(), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity);
             if (entity.level().clip(ctx).getType() == HitResult.Type.BLOCK) {
                 return false;
             } else {
                 return filter.test(e);
             }
-        }).stream().map((e) -> (LivingEntity) e).findFirst().orElse(null));
+        }).stream().min(Comparator.comparing(e -> TimeCalculator.calculateTime(entity.position().toVector3f(), e.position().toVector3f(), entity.getDeltaMovement().toVector3f(), getTurnRate()))).orElse(null));
     }
 
     public void tick() {
-        Entity target = getTarget();
-        float homingStrength = getHomingStrength();
-        if (homingStrength > 0.0F) {
-            if (target == null) {
-                if (entity.tickCount % 5 == 0) {
-                    target();
-                }
-            } else {
+        if (speed == -1)
+            speed = entity.getDeltaMovement().length();
+        float turnRate = getTurnRate();
+        if (turnRate > 0.0F) {
+            if (entity.tickCount % 5 == 0) {
+                target();
+            }
+            var target = getTarget();
+            if (target != null) {
                 Vec3 myPos = entity.position();
-                Vec3 theirPos = target.position().add(0.0F, (target.getBbHeight() / 2.0F), 0.0F);
-                float maxRotationRadians = 0.261799F;
-                float tickTheta = maxRotationRadians * MathUtils.clamp01(homingStrength);
+                Vec3 theirPos = target.getBoundingBox().getCenter();
+                float tickTheta = getTurnRate();
                 if (tickTheta > 0.0F) {
                     Vec3 desiredHeading = theirPos.subtract(myPos).normalize();
-                    Vec3 calculatedHeading = MathUtils.rotateTowards(entity.getDeltaMovement().normalize(), desiredHeading, tickTheta).normalize().scale(0.1);
+                    Vec3 calculatedHeading = MathUtils.rotateTowards(entity.getDeltaMovement().normalize(), desiredHeading, tickTheta).normalize().scale(speed);
                     entity.setDeltaMovement(calculatedHeading);
                 }
             }
@@ -126,18 +137,14 @@ public class TargetTracker {
     public void save(CompoundTag compound) {
         var tag = new CompoundTag();
         targetRef.save(tag);
-        tag.putFloat("homingStrength", entity.getEntityData().get(dataAccessor.HOMING_STRENGTH));
+        tag.putFloat("turnRate", entity.getEntityData().get(dataAccessor.TURN_RATE));
         compound.put(name, tag);
     }
 
     public void load(CompoundTag compound) {
         var tag = compound.getCompound(name);
         targetRef.load(tag);
-        setHomingStrength(tag.getFloat("homingStrength"));
-    }
-
-    public float getHomingStrength() {
-        return entity.getEntityData().get(dataAccessor.HOMING_STRENGTH);
+        setTurnRate(tag.getFloat("turnRate"));
     }
 
     public Entity getTarget() {
@@ -148,7 +155,11 @@ public class TargetTracker {
         targetRef.set(entity);
     }
 
-    public void setHomingStrength(float strength) {
-        entity.getEntityData().set(dataAccessor.HOMING_STRENGTH, strength);
+    public float getTurnRate() {
+        return entity.getEntityData().get(dataAccessor.TURN_RATE);
+    }
+
+    public void setTurnRate(float strength) {
+        entity.getEntityData().set(dataAccessor.TURN_RATE, strength);
     }
 }

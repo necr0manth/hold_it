@@ -220,7 +220,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
             return;
         var balls = getBalls();
         for (var ball : balls) {
-            ball.shoot(precision() == 0 || balls.size() == 1 ? ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize() : precision() == 1 ? getCaster().getLookAngle() : getCaster().getLookAngle().multiply(1, 0, 1));
+            ball.shoot(precision() == 0 || balls.size() == 1 ? ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize() : getBallData(0, 1, 1, 1, distanceToProjectiles(), getCaster().getEyePosition().add(0, Math.max(0, -getCaster().getLookAngle().normalize().y * 0.5f + 1), 0), getCaster().getLookAngle(), getCaster().yBodyRot, 0).pos().subtract(getCaster().getEyePosition()));
         }
     }
 

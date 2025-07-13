@@ -52,15 +52,6 @@ public class BallEntity extends ThrowableProjectile {
     @Getter
     private boolean isHomingEnabled = false;
     @Getter
-    private float trackingStrength = 0.15f; // Сила наведения (0.0 - 1.0)
-    @Getter
-    private double searchRadius = 12.0; // Радиус поиска целей
-    @Getter
-    private double maxTrackingDistance = 25.0; // Максимальная дистанция отслеживания
-    @Getter
-    @Setter
-    private double maxTurnRate = Math.PI / 8; // Максимальная скорость поворота (радианы за тик)
-    @Getter
     @Setter
     private int targetSearchCooldown = 0; // Кулдаун поиска новых целей
 
@@ -112,7 +103,7 @@ public class BallEntity extends ThrowableProjectile {
         }
 
         if (entityData.get(THROWN) && isHomingEnabled && !level().isClientSide) {
-            targetTracker.setHomingStrength(0.5f);
+            targetTracker.setTurnRate(0.2f);
             targetTracker.tick();
         }
 
@@ -211,10 +202,6 @@ public class BallEntity extends ThrowableProjectile {
         compound.putBoolean("thrown", this.entityData.get(THROWN));
         compound.putInt("index", entityData.get(ID));
         compound.putBoolean("homingEnabled", isHomingEnabled);
-        compound.putFloat("trackingStrength", trackingStrength);
-        compound.putDouble("searchRadius", searchRadius);
-        compound.putDouble("maxTrackingDistance", maxTrackingDistance);
-        compound.putDouble("maxTurnRate", maxTurnRate);
         compound.putInt("targetSearchCooldown", targetSearchCooldown);
         spellHolder.save(compound);
         casterRef.save(compound);
@@ -227,10 +214,6 @@ public class BallEntity extends ThrowableProjectile {
         entityData.set(POWER, pCompound.getFloat("power"));
         entityData.set(THROWN, pCompound.getBoolean("thrown"));
         isHomingEnabled = pCompound.getBoolean("homingEnabled");
-        trackingStrength = pCompound.getFloat("trackingStrength");
-        searchRadius = pCompound.getDouble("searchRadius");
-        maxTrackingDistance = pCompound.getDouble("maxTrackingDistance");
-        maxTurnRate = pCompound.getDouble("maxTurnRate");
         targetSearchCooldown = pCompound.getInt("targetSearchCooldown");
         spellHolder.load(pCompound);
         casterRef.load(pCompound);
@@ -309,6 +292,6 @@ public class BallEntity extends ThrowableProjectile {
 
     public void shoot(Vec3 dir) {
         entityData.set(THROWN, true);
-        shoot(dir.x, dir.y, dir.z, (float) (2 / (entityData.get(POWER) + 0.5)), 0);
+        shoot(dir.x, dir.y, dir.z, (float) (1 / (entityData.get(POWER) + 0.5)), 0);
     }
 }
