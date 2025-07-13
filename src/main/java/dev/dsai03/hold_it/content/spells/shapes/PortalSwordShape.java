@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.spells.shapes;
 
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.attributes.AttributeValuePair;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellSource;
@@ -8,8 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 public class PortalSwordShape extends BaseChargeableSpellShape<PortalSwordShapeEntity> {
-    public PortalSwordShape(ResourceLocation guiIcon, AttributeValuePair... attributeValuePairs) {
-        super(guiIcon, attributeValuePairs);
+    public PortalSwordShape(ResourceLocation guiIcon) {
+        super(guiIcon, new AttributeValuePair(Attribute.MAGNITUDE, 10, 1, 30, 1, 10), new AttributeValuePair(Attribute.DURATION, 10, 1, 30, 1, 10), new AttributeValuePair(Attribute.SPEED, 1, 0.1f, 5, 0.1f, 40));
     }
 
     @Override
@@ -19,16 +20,16 @@ public class PortalSwordShape extends BaseChargeableSpellShape<PortalSwordShapeE
 
     @Override
     public int baselineCooldown() {
-        return 120; // 6 секунд кулдаун
+        return 40;
     }
 
     @Override
     public float initialComplexity() {
-        return 15; // Средняя сложность
+        return 15;
     }
 
     @Override
     public int requiredXPForRote() {
-        return 200; // Требуется 200 опыта для роута
+        return 200;
     }
 } 

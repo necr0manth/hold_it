@@ -9,6 +9,7 @@ import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.*;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -22,12 +23,14 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -43,7 +46,6 @@ public class SwordEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(SwordEntity.class);
     private static final TargetTracker.DataAccessor TARGET_TRACKER = new TargetTracker.DataAccessor(SwordEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
-    private float lastPower = 1;
     private SpellHolder spellHolder;
     private Random random = new Random();
     private TargetTracker targetTracker;
@@ -54,12 +56,10 @@ public class SwordEntity extends ThrowableProjectile {
         setInvulnerable(true);
     }
 
-    public SwordEntity(Level level, PortalEntity portal) {
+    public SwordEntity(Level level, LivingEntity caster, ISpellDefinition spell) {
         this(AwesomeEntityTypes.SWORD_ENTITY_TYPE.get(), level);
-        setOwner(portal);
-        casterRef.set(portal.getCaster());
-        spellHolder.setSpell(portal.getSpell());
-        setPos(portal.position());
+        casterRef.set(caster);
+        spellHolder.setSpell(spell);
     }
 
     public LivingEntity getCaster() {
@@ -68,60 +68,29 @@ public class SwordEntity extends ThrowableProjectile {
 
     @Override
     public void tick() {
-        super.tick();
-
-        if (level().isClientSide) {
-            clientTick();
-            return;
-        }
-
-        if (entityData.get(THROWN)) {
-            Vec3 motion = getDeltaMovement();
-            setDeltaMovement(motion.add(0, -0.045, 0));
-        }
-
-        if (!entityData.get(THROWN)) return;
-        LivingEntity target = null;
-        for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(64)).stream().sorted((e1, e2) -> Float.compare(e1.distanceTo(this), e2.distanceTo(this))).toList()) {
-            if (entity == getCaster()) continue;
-            target = entity;
-            break;
-        }
-        if (target == null)
-            return;
-        if (target.isAlive()) {
-            Vec3 targetPos = target.getEyePosition().add(0, -0.3, 0);
-            Vec3 toTarget = targetPos.subtract(position());
-            Vec3 portalForward = getOwner() instanceof PortalEntity portal ? portal.getLookAngle().normalize() : getDeltaMovement().normalize();
-            double dot = portalForward.dot(toTarget.normalize());
-            if (dot > 0) { // цель впереди портала
-                Vec3 currentMotion = getDeltaMovement();
-                Vec3 desiredMotion = toTarget.normalize().scale(currentMotion.length());
-                Vec3 smoothed = currentMotion.lerp(desiredMotion, 0.15);
-                setDeltaMovement(smoothed);
-                setYRot((float) (Mth.atan2(smoothed.z, smoothed.x) * (180F / Math.PI)) - 90F);
-                setXRot((float) (-Mth.atan2(smoothed.y, Math.sqrt(smoothed.x * smoothed.x + smoothed.z * smoothed.z)) * (180F / Math.PI)));
+        if (!level().isClientSide) {
+            if (entityData.get(THROWN)) {
+                targetTracker.setTurnRate(0.2f);
+                targetTracker.tick();
             }
-            // иначе летим прямо
         }
-        if (getDeltaMovement().length() < 0.01) {
-            onHit(position());
-        }
+        super.tick();
+        lookAt(EntityAnchorArgument.Anchor.FEET, getDeltaMovement().add(position()));
 
-        if (entityData.get(POWER) != lastPower) {
-            lastPower = entityData.get(POWER);
-            refreshDimensions();
-        }
+
+        if (level().isClientSide)
+            clientTick();
     }
 
-    private Vec3 predictTarget(LivingEntity target, Vec3 basePos) {
-        Vec3 targetVel = target.getDeltaMovement();
-        double predictionTime = 0.5;
-        return basePos.add(targetVel.scale(predictionTime / 0.05));
+    @Override
+    protected float getEyeHeight(Pose pPose, EntityDimensions pDimensions) {
+        return pDimensions.height / 2;
     }
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
+        if (spellHolder.getSpell() == null)
+            return;
         if (tickCount % 2 == 0) {
             Affinity affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
             Vec3 trailPos = position().add(
@@ -149,30 +118,12 @@ public class SwordEntity extends ThrowableProjectile {
     }
 
     @Override
-    public EntityDimensions getDimensions(Pose pose) {
-        return EntityDimensions.scalable(0.5f, 0.5f);
-    }
-
-    @Override
-    public boolean canBeCollidedWith() {
-        return true;
-    }
-
-    @Override
     protected void defineSynchedData() {
         entityData.define(POWER, 1.0f);
         entityData.define(THROWN, false);
         spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
         casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
         targetTracker = TargetTracker.createAndDefine(TARGET_TRACKER, "targetTracking", e -> e != getCaster() && e instanceof LivingEntity, this);
-    }
-
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
-        super.onSyncedDataUpdated(key);
-        if (POWER.equals(key)) {
-            refreshDimensions();
-        }
     }
 
     public void setSpell(ISpellDefinition spell) {
@@ -186,6 +137,7 @@ public class SwordEntity extends ThrowableProjectile {
         compound.putBoolean("thrown", entityData.get(THROWN));
         spellHolder.save(compound);
         casterRef.save(compound);
+        targetTracker.save(compound);
     }
 
     @Override
@@ -195,6 +147,7 @@ public class SwordEntity extends ThrowableProjectile {
         entityData.set(THROWN, pCompound.getBoolean("thrown"));
         spellHolder.load(pCompound);
         casterRef.load(pCompound);
+        targetTracker.load(pCompound);
     }
 
     @Override
@@ -255,11 +208,10 @@ public class SwordEntity extends ThrowableProjectile {
         discard();
     }
 
-    public void shoot(Vec3 direction) {
+    public void shoot(Vec3 veclocity, float turnRate) {
         entityData.set(THROWN, true);
-        setDeltaMovement(direction.normalize().scale(0.15)); // ещё медленнее
-        setYRot((float) (Mth.atan2(direction.z, direction.x) * (180F / Math.PI)) - 90F);
-        setXRot((float) (-Mth.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z)) * (180F / Math.PI)));
+        targetTracker.setTurnRate(turnRate);
+        setDeltaMovement(veclocity);
     }
 
     public ItemStack getItem() {

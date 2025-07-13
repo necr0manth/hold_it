@@ -90,7 +90,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
         // Получаем доступную ману
         float currentMana = getCasterMana();
-        float singleBallManaCost = getCastingSpellManaCost();
+        float singleBallManaCost = getBaseSpellManaCost();
 
         // Сколько полных шаров можем создать с текущей маной
         int fullAffordableBalls = currentMana > 0 ? Mth.floor(currentMana / singleBallManaCost) : 0;
@@ -175,7 +175,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
         // Сколько шаров можем создать с текущей маной
         float currentMana = getCasterMana();
-        float singleBallManaCost = getCastingSpellManaCost();
+        float singleBallManaCost = getBaseSpellManaCost();
 
         if (currentMana <= 0) {
             return 0;
@@ -211,7 +211,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
 
     @Override
     public float getRequestedManaCost() {
-        return Math.min(getCharge() / chargedBallPower() * getCastingSpellManaCost(), getCasterMana());
+        return Math.min(getCharge() / chargedBallPower() * getBaseSpellManaCost(), getCasterMana());
     }
 
     @Override

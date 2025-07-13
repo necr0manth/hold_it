@@ -104,43 +104,6 @@ public abstract class ChargeableSpellEntity extends Entity {
         return getSpell().getManaCost();
     }
 
-    public float getCastingSpellManaCost() {
-        return getBaseSpellManaCost();
-//        var recipe = getSpell();
-//        overrideManaCost = false;
-//        var nbt = new CompoundTag();
-//        recipe.writeToNBT(nbt);
-//        var newRecipe = SpellRecipe.fromNBT(nbt);
-//        var modifiedShape = newRecipe.getShape();
-//        if (modifiedShape == null)
-//            throw new RuntimeException("0_o");
-//        if (modifiedShape.getPart() instanceof IChargeableSpellShape shape) {
-//            newRecipe.setShape(new Shape(null) {
-//                @Override
-//                public List<SpellTarget> Target(SpellSource var1, Level var2, IModifiedSpellPart<Shape> var3, ISpellDefinition var4) {
-//                    throw new RuntimeException("0_o");
-//                }
-//
-//                @Override
-//                public float initialComplexity() {
-//                    return shape.castComplexity();
-//                }
-//
-//                @Override
-//                public int requiredXPForRote() {
-//                    throw new RuntimeException("0_o");
-//                }
-//            });
-//            for (var attribute : modifiedShape.getContainedAttributes())
-//                newRecipe.changeShapeAttributeValue(attribute, modifiedShape.getValue(attribute));
-//            newRecipe.calculateManaCost();
-//            SpellUtils.applyAdjusters(newRecipe, getCaster(), false, SpellCastStage.CALCULATING_MANA_COST);
-//            overrideManaCost = true;
-//            return newRecipe.getManaCost();
-//        }
-//        throw new RuntimeException("0_o");
-    }
-
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         return new EntityDimensions(0, 0, true);

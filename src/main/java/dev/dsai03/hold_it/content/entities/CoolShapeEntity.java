@@ -132,7 +132,7 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void applySpell(float manaCost, float casterMana) {
-        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), getManaCost(), getCastingSpellManaCost(), false);
+        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), getManaCost(), getBaseSpellManaCost(), false);
     }
 
     protected List<SpellTarget> target() {

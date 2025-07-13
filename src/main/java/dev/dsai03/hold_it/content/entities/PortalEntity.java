@@ -3,11 +3,15 @@ package dev.dsai03.hold_it.content.entities;
 import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
 import com.mna.api.spells.base.ISpellDefinition;
+import com.mna.tools.math.MathUtils;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.SpellHolder;
+import dev.dsai03.hold_it.util.TargetTracker;
+import lombok.Builder;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -28,19 +32,22 @@ import java.util.Comparator;
 import java.util.Random;
 
 public class PortalEntity extends Entity {
-    private static final EntityDataAccessor<Float> SIZE = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Integer> SWORD_COUNT = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> SWORDS_LAUNCHED = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.INT);
     private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(PortalEntity.class);
     private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(PortalEntity.class);
-    
+    private static final EntityDataAccessor<Integer> ACTIVATION_TIME = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> LIFETIME = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.INT);
+
     private Entity2EntityReference<LivingEntity> casterRef;
     private SpellHolder spellHolder;
-    private Random random = new Random();
-    private int launchDelay = 0;
-    private static final int LAUNCH_INTERVAL = 20;
-    public boolean canLaunch = false;
-    private static final int MAX_PORTALS = 4;
+    private float frequency;
+    private float followViewSpeed;
+    private int followViewTime;
+    private int launchedSwords = 0;
+    private float searchRadius;
+    private float spread;
+    private float swordSpeed;
+    private float swordTurnRate;
+
 
     public PortalEntity(EntityType<? extends PortalEntity> entityType, Level level) {
         super(entityType, level);
@@ -48,27 +55,21 @@ public class PortalEntity extends Entity {
         setInvulnerable(true);
     }
 
-    public static int getActivePortalCount(Level level, LivingEntity caster) {
-        return (int) level.getEntitiesOfClass(PortalEntity.class, caster.getBoundingBox().inflate(32),
-            e -> e.getCaster() != null && e.getCaster().equals(caster)).size();
-    }
 
-    public PortalEntity(Level level, LivingEntity caster, ISpellDefinition spell, Vec3 position, float size, int swordCount) {
+    @Builder
+    public PortalEntity(Level level, LivingEntity caster, ISpellDefinition spell, Vec3 position, int lifetime, float frequency, float followViewSpeed, int followViewTime, float searchRadius, float spread, float swordSpeed, float swordTurnRate) {
         this(AwesomeEntityTypes.PORTAL_ENTITY_TYPE.get(), level);
-        if (getActivePortalCount(level, caster) >= MAX_PORTALS) {
-            discard();
-            return;
-        }
-        if (position.distanceTo(caster.position()) < 3.0) {
-            discard();
-            return;
-        }
-        System.out.println("[DEBUG] PortalEntity создан: pos=" + position + ", size=" + size + ", swords=" + swordCount);
         casterRef.set(caster);
         spellHolder.setSpell(spell);
         setPos(position);
-        setSize(size);
-        setSwordCount(swordCount);
+        entityData.set(LIFETIME, lifetime);
+        this.frequency = frequency;
+        this.followViewSpeed = followViewSpeed;
+        this.followViewTime = followViewTime;
+        this.searchRadius = searchRadius;
+        this.spread = spread;
+        this.swordSpeed = swordSpeed;
+        this.swordTurnRate = swordTurnRate;
     }
 
     public LivingEntity getCaster() {
@@ -81,187 +82,95 @@ public class PortalEntity extends Entity {
 
     @Override
     public void tick() {
+        if (!level().isClientSide) {
+            float followViewFactor = isActivated() ? (float) (tickCount - entityData.get(ACTIVATION_TIME)) / followViewTime : 1;
+            var currentView = getLookAngle();
+            var targetView = getCaster().getLookAngle();
+            lookAt(EntityAnchorArgument.Anchor.FEET, position().add(MathUtils.rotateTowards(currentView, targetView, followViewFactor * followViewSpeed)));
+            if (isActivated()) {
+                if (Math.random() < frequency - (float) launchedSwords / getRemainingLifetime()) {
+                    launchSword();
+                }
+            }
+            if (getRemainingLifetime() <= 0)
+                discard();
+        }
         super.tick();
-        
         if (level().isClientSide) {
             clientTick();
-            return;
-        }
-
-        if (getSwordsLaunched() < getSwordCount()) {
-            if (!canLaunch) return;
-            launchDelay++;
-            if (launchDelay >= LAUNCH_INTERVAL) {
-                launchSword();
-                launchDelay = 0;
-            }
-        } else {
-            discard();
         }
     }
 
     private void launchSword() {
-        SwordEntity sword = new SwordEntity(level(), this);
-        sword.setPos(position());
-        sword.setPower(getSize() * 0.5f);
-        if (getCaster() != null) {
-            Vec3 forward = getLookAngle().normalize();
-            double spread = 0.12;
-            double angleOffset = (random.nextDouble() - 0.5) * spread;
-            double baseYaw = Math.atan2(forward.z, forward.x);
-            double newYaw = baseYaw + angleOffset;
-            Vec3 launchDir = new Vec3(Math.cos(newYaw), forward.y, Math.sin(newYaw)).normalize();
-            sword.shoot(launchDir);
-        }
+        var direction = level().getEntities(this, getBoundingBox().inflate(searchRadius), e -> e instanceof LivingEntity living && living.isAlive() && living != getCaster())
+                .stream()
+                .min(Comparator.comparing(e -> {
+                    var dir = MathUtils.rotateTowards(getLookAngle(), e.getBoundingBox().getCenter().subtract(getBoundingBox().getCenter()), spread);
+                    return TargetTracker.TimeCalculator.calculateTime(getBoundingBox().getCenter().toVector3f(), e.position().toVector3f(), dir.toVector3f(), swordTurnRate);
+                })).map(e -> MathUtils.rotateTowards(getLookAngle(), e.getBoundingBox().getCenter().subtract(getBoundingBox().getCenter()), spread)).orElse(getLookAngle()).normalize();
+        var swordVelocity = direction.scale(swordSpeed);
+        var sword = new SwordEntity(level(), getCaster(), getSpell());
+        sword.setPos(getBoundingBox().getCenter().subtract(0, sword.getBbHeight(), 0));
+        sword.lookAt(EntityAnchorArgument.Anchor.FEET, sword.position().add(swordVelocity));
         level().addFreshEntity(sword);
-        setSwordsLaunched(getSwordsLaunched() + 1);
+        sword.shoot(swordVelocity, swordTurnRate);
+        launchedSwords++;
     }
 
-    private LivingEntity findNearestTarget() {
-        return level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(24), // Увеличен радиус поиска
-                e -> e != getCaster() && e.isAlive() && !e.isAlliedTo(getCaster()) && 
-                     e instanceof net.minecraft.world.entity.Mob) // Ищем только мобов для лучшего таргетинга
-                .stream()
-                .min(Comparator.comparingDouble(e -> e.distanceTo(this)))
-                .orElse(null);
+    public int getRemainingLifetime() {
+        return isActivated() ? entityData.get(LIFETIME) - (tickCount - entityData.get(ACTIVATION_TIME)) : Integer.MAX_VALUE;
+    }
+
+    public boolean isActivated() {
+        return entityData.get(ACTIVATION_TIME) != -1;
+    }
+
+    public void activate() {
+        entityData.set(ACTIVATION_TIME, tickCount);
     }
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        // Создаем частицы портала
-        Affinity affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
-        
-        // Основные частицы портала
-        if (tickCount % 3 == 0) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double radius = getSize() * (0.8 + random.nextDouble() * 0.4);
-            
-            Vec3 portalPos = position().add(
-                Math.cos(angle) * radius,
-                (random.nextDouble() - 0.5) * getSize() * 0.5,
-                Math.sin(angle) * radius
-            );
-            
-            ParticleUtils.addParticle(
-                spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()),
-                portalPos,
-                Vec3.ZERO,
-                ParticleUtils.EMPTY_TICKER,
-                ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
-            );
-        }
-        
-        // Спиральные частицы
-        if (tickCount % 5 == 0) {
-            double angle = (tickCount * 0.2) % (Math.PI * 2);
-            double radius = getSize() * 0.6;
-            
-            Vec3 spiralPos = position().add(
-                Math.cos(angle) * radius,
-                Math.sin(tickCount * 0.1) * getSize() * 0.3,
-                Math.sin(angle) * radius
-            );
-            
-            Vec3 velocity = new Vec3(
-                -Math.sin(angle) * 0.02,
-                0.01,
-                Math.cos(angle) * 0.02
-            );
-            
-            ParticleUtils.addParticle(
-                spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()),
-                spiralPos,
-                velocity,
-                ParticleUtils.EMPTY_TICKER,
-                ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
-            );
-        }
-        
-        // Частицы при запуске меча
-        if (getSwordsLaunched() < getSwordCount() && launchDelay >= LAUNCH_INTERVAL - 10) {
-            for (int i = 0; i < 5; i++) {
-                Vec3 burstPos = position().add(
-                    (random.nextDouble() - 0.5) * getSize() * 0.5,
-                    (random.nextDouble() - 0.5) * getSize() * 0.5,
-                    (random.nextDouble() - 0.5) * getSize() * 0.5
-                );
-                
-                Vec3 burstVelocity = position().subtract(burstPos).normalize().scale(0.1);
-                
-                ParticleUtils.addParticle(
-                    spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()),
-                    burstPos,
-                    burstVelocity,
-                    ParticleUtils.EMPTY_TICKER,
-                    ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
-                );
-            }
-        }
-    }
 
-    public void setSize(float size) {
-        entityData.set(SIZE, size);
-    }
-
-    public float getSize() {
-        return entityData.get(SIZE);
-    }
-
-    public void setSwordCount(int count) {
-        entityData.set(SWORD_COUNT, count);
-    }
-
-    public int getSwordCount() {
-        return entityData.get(SWORD_COUNT);
-    }
-
-    public void setSwordsLaunched(int count) {
-        entityData.set(SWORDS_LAUNCHED, count);
-    }
-
-    public int getSwordsLaunched() {
-        return entityData.get(SWORDS_LAUNCHED);
-    }
-
-    @Override
-    public EntityDimensions getDimensions(Pose pPose) {
-        return new EntityDimensions(getSize(), getSize(), false);
     }
 
     @Override
     protected void defineSynchedData() {
-        entityData.define(SIZE, 1.0f);
-        entityData.define(SWORD_COUNT, 5);
-        entityData.define(SWORDS_LAUNCHED, 0);
         spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
         casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
-    }
-
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
-        super.onSyncedDataUpdated(key);
-        if (SIZE.equals(key)) {
-            refreshDimensions();
-        }
+        entityData.define(ACTIVATION_TIME, -1);
+        entityData.define(LIFETIME, -1);
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag compound) {
-        compound.putFloat("size", getSize());
-        compound.putInt("swordCount", getSwordCount());
-        compound.putInt("swordsLaunched", getSwordsLaunched());
-        compound.putInt("launchDelay", launchDelay);
         spellHolder.save(compound);
         casterRef.save(compound);
+        compound.putInt("activationTime", entityData.get(ACTIVATION_TIME));
+        compound.putInt("lifetime", entityData.get(LIFETIME));
+        compound.putFloat("frequency", frequency);
+        compound.putFloat("launchedSwords", launchedSwords);
+        compound.putFloat("followViewSpeed", followViewSpeed);
+        compound.putInt("followViewTime", followViewTime);
+        compound.putFloat("searchRadius", searchRadius);
+        compound.putFloat("spread", spread);
+        compound.putFloat("swordSpeed", swordSpeed);
+        compound.putFloat("swordTurnRate", swordTurnRate);
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
-        setSize(compound.getFloat("size"));
-        setSwordCount(compound.getInt("swordCount"));
-        setSwordsLaunched(compound.getInt("swordsLaunched"));
-        launchDelay = compound.getInt("launchDelay");
         spellHolder.load(compound);
         casterRef.load(compound);
+        entityData.set(ACTIVATION_TIME, compound.getInt("activationTime"));
+        entityData.set(LIFETIME, compound.getInt("lifetime"));
+        frequency = compound.getFloat("frequency");
+        launchedSwords = compound.getInt("launchedSwords");
+        followViewSpeed = compound.getFloat("followViewSpeed");
+        followViewTime = compound.getInt("followViewTime");
+        searchRadius = compound.getFloat("searchRadius");
+        spread = compound.getFloat("spread");
+        swordSpeed = compound.getFloat("swordSpeed");
+        swordTurnRate = compound.getFloat("swordTurnRate");
     }
 } 
