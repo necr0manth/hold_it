@@ -36,31 +36,30 @@ Work is divided to spells. Part of team works on interface, part on logic and be
 
 ```mermaid
 gitGraph
-    commit id: "Initial" type: DARK
-    branch main type: GREEN
-    branch HaboshBabosh type: HIGHLIGHT
-    branch "tf is this" type: ORANGE
-    branch uguggaga type: PURPLE
+    commit
+    branch HaboshBabosh
+    branch "tf is this"
+    branch uguggaga
     checkout HaboshBabosh
-    commit id: "HB-1" type: HIGHLIGHT
-    commit id: "HB-2" type: HIGHLIGHT
-    commit id: "HB-3" type: REVERSE
+    commit
+    commit
+    commit
     checkout main
-    merge HaboshBabosh type: HIGHLIGHT
+    merge HaboshBabosh
     checkout "tf is this"
-    commit id: "TF-1" type: ORANGE
+    commit
     checkout main
-    merge "tf is this" type: ORANGE
-    branch wth type: BLUE
+    merge "tf is this"
+    branch wth
     checkout wth
-    commit id: "WTH-1" type: BLUE
+    commit
     checkout main
-    merge wth type: BLUE
+    merge wth
     checkout uguggaga
-    commit id: "UG-1" type: PURPLE
-    commit id: "UG-2" type: REVERSE
+    commit
+    commit
     checkout main
-    merge uguggaga type: PURPLE
+    merge uguggaga
 ```
 
 ### Secrets management
