@@ -50,14 +50,22 @@ public class Entity2EntityReference<T extends Entity> {
 
     public void save(CompoundTag tag) {
         var tag1 = new CompoundTag();
-        tag1.putUUID("uuid", uuid);
+        // Проверяем uuid на null перед сохранением
+        if (uuid != null) {
+            tag1.putUUID("uuid", uuid);
+        }
         tag1.putString("dimension", entity.getEntityData().get(dataAccessor.DIMENSION));
         tag.put(name, tag1);
     }
 
     public void load(CompoundTag tag) {
         var tag1 = tag.getCompound(name);
-        uuid = tag1.getUUID("uuid");
+        // Проверяем наличие uuid в NBT перед загрузкой
+        if (tag1.contains("uuid")) {
+            uuid = tag1.getUUID("uuid");
+        } else {
+            uuid = null;
+        }
         entity.getEntityData().set(dataAccessor.DIMENSION, tag1.getString("dimension"));
     }
 
@@ -85,6 +93,12 @@ public class Entity2EntityReference<T extends Entity> {
     }
 
     public void set(T entity) {
+        if (entity == null) {
+            uuid = null;
+            this.entity.getEntityData().set(dataAccessor.ID, -1);
+            this.entity.getEntityData().set(dataAccessor.DIMENSION, "");
+            return;
+        }
         uuid = entity.getUUID();
         this.entity.getEntityData().set(dataAccessor.ID, entity.getId());
         this.entity.getEntityData().set(dataAccessor.DIMENSION, entity.level().dimension().location().toString());

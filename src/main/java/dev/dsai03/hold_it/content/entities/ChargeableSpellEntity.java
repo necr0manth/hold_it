@@ -1,18 +1,10 @@
 package dev.dsai03.hold_it.content.entities;
 
-import com.mna.api.ManaAndArtificeMod;
 import com.mna.api.spells.adjusters.SpellAdjustingContext;
 import com.mna.api.spells.adjusters.SpellCastStage;
-import com.mna.api.spells.attributes.Attribute;
-import com.mna.api.spells.base.IModifiedSpellPart;
 import com.mna.api.spells.base.ISpellDefinition;
-import com.mna.api.spells.parts.Shape;
-import com.mna.api.spells.targeting.SpellSource;
-import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
-import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
-import dev.dsai03.hold_it.content.spells.shapes.IChargeableSpellShape;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
@@ -32,7 +24,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Optional;
 
 public abstract class ChargeableSpellEntity extends Entity {
@@ -194,7 +185,7 @@ public abstract class ChargeableSpellEntity extends Entity {
                 interrupt(InterruptReason.OTHER);
                 return;
             }
-            if (!recipe.isValid()) {
+            if (recipe == null || !recipe.isValid()) {
                 interrupt(InterruptReason.INVALID_RECIPE);
                 return;
             }

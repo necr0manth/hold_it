@@ -7,6 +7,7 @@ import dev.dsai03.hold_it.content.spells.shapes.AwesomeSpellShape;
 import dev.dsai03.hold_it.content.spells.shapes.BigBallSpellShape;
 import dev.dsai03.hold_it.content.spells.shapes.CoolShape;
 import dev.dsai03.hold_it.content.spells.shapes.SpellSevenShape;
+import dev.dsai03.hold_it.content.spells.shapes.PortalSwordShape;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;

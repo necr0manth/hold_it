@@ -116,7 +116,7 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
 
 
     protected void applySpell(float manaCost, float casterMana) {
-        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), manaCost, false);
+        SpellUtils.cast(getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), target(), t -> new SpellContext(level(), getSpell()), manaCost, getCastingSpellManaCost(), false);
     }
 
     protected List<SpellTarget> target() {

@@ -8,10 +8,7 @@ import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
-import dev.dsai03.hold_it.util.AffinityDistribution;
-import dev.dsai03.hold_it.util.Entity2EntityReference;
-import dev.dsai03.hold_it.util.SpellHolder;
-import dev.dsai03.hold_it.util.SpellUtils;
+import dev.dsai03.hold_it.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -44,11 +41,12 @@ public class SwordEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(SwordEntity.class, EntityDataSerializers.BOOLEAN);
     private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(SwordEntity.class);
     private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(SwordEntity.class);
+    private static final TargetTracker.DataAccessor TARGET_TRACKER = new TargetTracker.DataAccessor(SwordEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
     private SpellHolder spellHolder;
     private Random random = new Random();
-    private UUID targetUUID;
+    private TargetTracker targetTracker;
 
     public SwordEntity(EntityType<? extends SwordEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -71,7 +69,7 @@ public class SwordEntity extends ThrowableProjectile {
     @Override
     public void tick() {
         super.tick();
-        
+
         if (level().isClientSide) {
             clientTick();
             return;
@@ -84,12 +82,12 @@ public class SwordEntity extends ThrowableProjectile {
 
         if (!entityData.get(THROWN)) return;
         LivingEntity target = null;
-        for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(64)).stream().sorted((e1, e2)-> Float.compare( e1.distanceTo(this),e2.distanceTo(this))).toList()) {
+        for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(64)).stream().sorted((e1, e2) -> Float.compare(e1.distanceTo(this), e2.distanceTo(this))).toList()) {
             if (entity == getCaster()) continue;
             target = entity;
             break;
         }
-        if(target ==null)
+        if (target == null)
             return;
         if (target.isAlive()) {
             Vec3 targetPos = target.getEyePosition().add(0, -0.3, 0);
@@ -101,8 +99,8 @@ public class SwordEntity extends ThrowableProjectile {
                 Vec3 desiredMotion = toTarget.normalize().scale(currentMotion.length());
                 Vec3 smoothed = currentMotion.lerp(desiredMotion, 0.15);
                 setDeltaMovement(smoothed);
-                setYRot((float)(Mth.atan2(smoothed.z, smoothed.x) * (180F / Math.PI)) - 90F);
-                setXRot((float)(-Mth.atan2(smoothed.y, Math.sqrt(smoothed.x * smoothed.x + smoothed.z * smoothed.z)) * (180F / Math.PI)));
+                setYRot((float) (Mth.atan2(smoothed.z, smoothed.x) * (180F / Math.PI)) - 90F);
+                setXRot((float) (-Mth.atan2(smoothed.y, Math.sqrt(smoothed.x * smoothed.x + smoothed.z * smoothed.z)) * (180F / Math.PI)));
             }
             // иначе летим прямо
         }
@@ -127,17 +125,17 @@ public class SwordEntity extends ThrowableProjectile {
         if (tickCount % 2 == 0) {
             Affinity affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
             Vec3 trailPos = position().add(
-                (random.nextDouble() - 0.5) * 0.2,
-                (random.nextDouble() - 0.5) * 0.2,
-                (random.nextDouble() - 0.5) * 0.2
+                    (random.nextDouble() - 0.5) * 0.2,
+                    (random.nextDouble() - 0.5) * 0.2,
+                    (random.nextDouble() - 0.5) * 0.2
             );
-            
+
             ParticleUtils.addParticle(
-                spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()),
-                trailPos,
-                Vec3.ZERO,
-                ParticleUtils.EMPTY_TICKER,
-                ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
+                    spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()),
+                    trailPos,
+                    Vec3.ZERO,
+                    ParticleUtils.EMPTY_TICKER,
+                    ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
             );
         }
     }
@@ -166,6 +164,7 @@ public class SwordEntity extends ThrowableProjectile {
         entityData.define(THROWN, false);
         spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
         casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
+        targetTracker = TargetTracker.createAndDefine(TARGET_TRACKER, "targetTracking", e -> e != getCaster() && e instanceof LivingEntity, this);
     }
 
     @Override
@@ -252,22 +251,18 @@ public class SwordEntity extends ThrowableProjectile {
             SpellContext context = new SpellContext(level(), spellHolder.getSpell());
             SpellUtils.cast(spellHolder.getSpell(), source, target, context);
         }
-        
+
         discard();
     }
 
     public void shoot(Vec3 direction) {
         entityData.set(THROWN, true);
         setDeltaMovement(direction.normalize().scale(0.15)); // ещё медленнее
-        setYRot((float)(Mth.atan2(direction.z, direction.x) * (180F / Math.PI)) - 90F);
-        setXRot((float)(-Mth.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z)) * (180F / Math.PI)));
+        setYRot((float) (Mth.atan2(direction.z, direction.x) * (180F / Math.PI)) - 90F);
+        setXRot((float) (-Mth.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z)) * (180F / Math.PI)));
     }
 
     public ItemStack getItem() {
         return new ItemStack(Items.IRON_SWORD);
     }
-
-    public void setTarget(LivingEntity target) {
-        this.targetUUID = target.getUUID();
-    }
-} 
+}
