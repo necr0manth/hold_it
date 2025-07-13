@@ -36,8 +36,12 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
         return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.MAGNITUDE);
     }
 
+    public float delay() {
+        return  Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.DELAY);
+    }
+
     public static float chargeTime() {
-        return 7;
+        return 6;
     }
 
     @Override
@@ -90,7 +94,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
             projectile.setPower(power);
             projectile.targetPosition = centerPos;
         } else {
-            var proj = new SphereEntity(level(), this, magnitude(), radius());
+            var proj = new SphereEntity(level(), this, magnitude(), radius(), delay(), radius());
             proj.setOwner(getCaster());
             proj.setSpell(getSpell());
             proj.setPos(centerPos);
@@ -105,7 +109,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
     @Override
     public float getRequestedManaCost() {
-        return Math.min(getCharge() * magnitude() * getBaseSpellManaCost(), getCasterMana());
+        return Math.min(getCharge() * (magnitude() + radius()) * getBaseSpellManaCost(), getCasterMana());
     }
 
     @Override
