@@ -34,6 +34,7 @@ Done - done
 ### Git workflow
 Work is divided to spells. Part of team works on interface, part on logic and behaviour. Icons are considered as interface and mostly being made there. Labels are set to match how many story points each issue provides. We consider each spell as standalone roject, so SP can overlap.  
 
+```mermaid
 gitGraph
     commit
     branch HaboshBabosh
@@ -55,6 +56,7 @@ gitGraph
     commit
     commit
     merge uguggaga
+```
 
 ### Secrets management
 Token for entering project is in private messages!!!(and shown as spoiler 0_0)
