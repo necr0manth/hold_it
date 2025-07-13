@@ -18,6 +18,6 @@ public interface AwesomeSpellShapes {
 	RegistryObject<CoolShape> COOL_SHAPE = SHAPES.register("cool_shape", () -> new CoolShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shape/1spelltg.png")));
 	RegistryObject<AwesomeSpellShape> AWESOME_SHAPE = SHAPES.register("awesome_shape", () -> new AwesomeSpellShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shape/3spelltg.png")));
 	RegistryObject<SpellSevenShape> SEVEN_SHAPE = SHAPES.register("seven_shape", () -> new SpellSevenShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shape/7spelltg.png")));
-	RegistryObject<BigBallSpellShape> BIG_BALL_SPELL_SHAPE = SHAPES.register("big_ball_shape", () -> new BigBallSpellShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shape/seven_shape.png")));
-    RegistryObject<PortalSwordShape> PORTAL_SWORD_SHAPE = SHAPES.register("portal_sword_shape", () -> new PortalSwordShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shapes/portal_sword_shape.png")));
+	RegistryObject<BigBallSpellShape> BIG_BALL_SPELL_SHAPE = SHAPES.register("big_ball_shape", () -> new BigBallSpellShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shape/2spelltg.png")));
+    RegistryObject<PortalSwordShape> PORTAL_SWORD_SHAPE = SHAPES.register("portal_sword_shape", () -> new PortalSwordShape(new ResourceLocation(MyAwesomeMnaAddon.MODID, "textures/spells/shape/portal_sword_shape.png")));
 }
