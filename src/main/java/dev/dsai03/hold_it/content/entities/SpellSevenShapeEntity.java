@@ -109,7 +109,7 @@ public class SpellSevenShapeEntity extends ChargeableSpellEntity {
     }
     @Override
     public float getRequestedManaCost() {
-        return Math.min(getCharge() * (magnitude() + radius()) * getCastingSpellManaCost(), getCasterMana());
+        return Math.min(getCharge() * (magnitude() + radius()) * getBaseSpellManaCost(), getCasterMana());
     }
 
     @Override

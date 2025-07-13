@@ -1,18 +1,10 @@
 package dev.dsai03.hold_it.content.entities;
 
-import com.mna.api.ManaAndArtificeMod;
 import com.mna.api.spells.adjusters.SpellAdjustingContext;
 import com.mna.api.spells.adjusters.SpellCastStage;
-import com.mna.api.spells.attributes.Attribute;
-import com.mna.api.spells.base.IModifiedSpellPart;
 import com.mna.api.spells.base.ISpellDefinition;
-import com.mna.api.spells.parts.Shape;
-import com.mna.api.spells.targeting.SpellSource;
-import com.mna.api.spells.targeting.SpellTarget;
 import com.mna.capabilities.playerdata.magic.PlayerMagicProvider;
-import com.mna.spells.SpellCaster;
 import com.mna.spells.crafting.SpellRecipe;
-import dev.dsai03.hold_it.content.spells.shapes.IChargeableSpellShape;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
 import dev.dsai03.hold_it.util.SpellHolder;
 import dev.dsai03.hold_it.util.SpellUtils;
@@ -32,7 +24,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Optional;
 
 public abstract class ChargeableSpellEntity extends Entity {
@@ -54,6 +45,7 @@ public abstract class ChargeableSpellEntity extends Entity {
         DEAD_CASTER,
         NOT_ENOUGH_MANA,
         INVALID_CASTER,
+        STOP_CASTING,
         OTHER
     }
 
@@ -112,43 +104,6 @@ public abstract class ChargeableSpellEntity extends Entity {
         return getSpell().getManaCost();
     }
 
-    public float getCastingSpellManaCost() {
-        return getBaseSpellManaCost();
-//        var recipe = getSpell();
-//        overrideManaCost = false;
-//        var nbt = new CompoundTag();
-//        recipe.writeToNBT(nbt);
-//        var newRecipe = SpellRecipe.fromNBT(nbt);
-//        var modifiedShape = newRecipe.getShape();
-//        if (modifiedShape == null)
-//            throw new RuntimeException("0_o");
-//        if (modifiedShape.getPart() instanceof IChargeableSpellShape shape) {
-//            newRecipe.setShape(new Shape(null) {
-//                @Override
-//                public List<SpellTarget> Target(SpellSource var1, Level var2, IModifiedSpellPart<Shape> var3, ISpellDefinition var4) {
-//                    throw new RuntimeException("0_o");
-//                }
-//
-//                @Override
-//                public float initialComplexity() {
-//                    return shape.castComplexity();
-//                }
-//
-//                @Override
-//                public int requiredXPForRote() {
-//                    throw new RuntimeException("0_o");
-//                }
-//            });
-//            for (var attribute : modifiedShape.getContainedAttributes())
-//                newRecipe.changeShapeAttributeValue(attribute, modifiedShape.getValue(attribute));
-//            newRecipe.calculateManaCost();
-//            SpellUtils.applyAdjusters(newRecipe, getCaster(), false, SpellCastStage.CALCULATING_MANA_COST);
-//            overrideManaCost = true;
-//            return newRecipe.getManaCost();
-//        }
-//        throw new RuntimeException("0_o");
-    }
-
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         return new EntityDimensions(0, 0, true);
@@ -193,7 +148,7 @@ public abstract class ChargeableSpellEntity extends Entity {
                 interrupt(InterruptReason.OTHER);
                 return;
             }
-            if (!recipe.isValid()) {
+            if (recipe == null || !recipe.isValid()) {
                 interrupt(InterruptReason.INVALID_RECIPE);
                 return;
             }
@@ -219,34 +174,18 @@ public abstract class ChargeableSpellEntity extends Entity {
         stopCast();
     }
 
-    /**
-     * Определяет можно ли кастовать спелл. Если спелл можно кастовать сразу без длительного удержания, то пусть просто всегда возвращает true
-     */
     public boolean isPrepared() {
         return true;
     }
 
-    /**
-     * Вызывается внутри обычного тика при условии, что спелл валиден и всё ок
-     */
     protected abstract void spellTick();
 
-    /**
-     * Разрешаем ли мы кастовать спелл при недостаточном количестве маны
-     */
     public boolean allowCastWhenNotEnoughMana() {
         return false;
     }
 
-    /**
-     * Сколько маны мы запрашиваем у игрока (отображется в мана баре и потребляется при касте)
-     */
     public abstract float getRequestedManaCost();
 
-    /**
-     * Если можем кастовать при недостаточной мане, то минимум из маны игрока и требуемой мане (т.е. сколько маны будет по факту потрачено)
-     * Если нельзя кастовать при недостаточной мане, то просто требуемая мана
-     */
     public float getManaCost() {
         if (allowCastWhenNotEnoughMana())
             return Math.min(getRequestedManaCost(), getCasterMana());
