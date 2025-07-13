@@ -120,7 +120,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
 
     @Override
     public float getRequestedManaCost() {
-        return Math.min(getCharge() * magnitude() * getCastingSpellManaCost(), getCasterMana());
+        return Math.min(getCharge() * magnitude() * getBaseSpellManaCost(), getCasterMana());
     }
 
     private float getCharge() {
