@@ -68,7 +68,7 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
         }
         if (tooClose) return;
 
-        PortalEntity portal = new PortalEntity(level(), getCaster(), getSpell(), portalPos, 100, 0.05f, 0.1f, 20, 20, 0.1f, 0.5f, 0.04f);
+        PortalEntity portal = new PortalEntity(level(), getCaster(), getSpell(), portalPos, (int) ((duration() + Math.random()) * 20), speed() / 20, 0.1f, (int) (20 * duration() * 0.2f), 20, 0.1f, 0.5f, 0.01f);
         portal.lookAt(EntityAnchorArgument.Anchor.FEET, portalPos.add(getCaster().getLookAngle()));
         level().addFreshEntity(portal);
         portals.add(portal);
@@ -107,12 +107,20 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
         }
     }
 
-    public int portalSpawnDelay() {
-        return 10;
+    public float portalSpawnDelay() {
+        return 0.5f;
     }
 
     public int magnitude() {
         return (int) getSpell().getShape().getValue(Attribute.MAGNITUDE);
+    }
+
+    public float speed() {
+        return getSpell().getShape().getValue(Attribute.SPEED);
+    }
+
+    public float duration() {
+        return getSpell().getShape().getValue(Attribute.DURATION);
     }
 
     @Override

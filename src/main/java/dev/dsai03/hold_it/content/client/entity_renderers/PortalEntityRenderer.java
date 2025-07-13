@@ -22,7 +22,7 @@ public class PortalEntityRenderer extends EntityRenderer<PortalEntity> {
 
     public void render(PortalEntity entity, float entityYaw, float partialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn) {
         var color = entity.getSpell().getParticleColorOverride();
-        this.renderDefaultPortal(entity, matrixStackIn, bufferIn, packedLightIn, partialTicks, new int[]{color>>16, (color>>8)&0xFF, color&0xFF});
+        this.renderDefaultPortal(entity, matrixStackIn, bufferIn, packedLightIn, partialTicks, new int[]{color >> 16, (color >> 8) & 0xFF, color & 0xFF});
     }
 
     private float getScale(PortalEntity portal, float fadeIn, float fadeOut, float partialTick) {
@@ -32,7 +32,7 @@ public class PortalEntityRenderer extends EntityRenderer<PortalEntity> {
     }
 
     private void renderDefaultPortal(PortalEntity portal, PoseStack pose, MultiBufferSource bufferSource, int packedLight, float partialTick, int[] color) {
-        float scaleFactor = 3.0F * this.getScale(portal, 20, 20, partialTick);
+        float scaleFactor = 2 * this.getScale(portal, 20, 20, partialTick);
         float portalSpinDegrees = (float) (portal.tickCount * 3 % 360);
         VertexConsumer vertexBuilder = bufferSource.getBuffer(MARenderTypes.PORTAL_RENDER);
         this.renderPortalTexture(portal, pose, vertexBuilder, packedLight, color, 230, scaleFactor, portalSpinDegrees, 0.0F);

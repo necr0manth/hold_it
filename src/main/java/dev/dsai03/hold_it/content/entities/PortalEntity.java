@@ -88,7 +88,7 @@ public class PortalEntity extends Entity {
             var targetView = getCaster().getLookAngle();
             lookAt(EntityAnchorArgument.Anchor.FEET, position().add(MathUtils.rotateTowards(currentView, targetView, followViewFactor * followViewSpeed)));
             if (isActivated()) {
-                if (Math.random() < frequency - (float) launchedSwords / getRemainingLifetime()) {
+                if (Math.random() < (frequency * entityData.get(LIFETIME) - (float) launchedSwords) / getRemainingLifetime()) {
                     launchSword();
                 }
             }
@@ -112,8 +112,8 @@ public class PortalEntity extends Entity {
         var sword = new SwordEntity(level(), getCaster(), getSpell());
         sword.setPos(getBoundingBox().getCenter().subtract(0, sword.getBbHeight(), 0));
         sword.lookAt(EntityAnchorArgument.Anchor.FEET, sword.position().add(swordVelocity));
-        level().addFreshEntity(sword);
         sword.shoot(swordVelocity, swordTurnRate);
+        level().addFreshEntity(sword);
         launchedSwords++;
     }
 
