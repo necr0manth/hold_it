@@ -38,23 +38,27 @@ Work is divided to spells. Part of team works on interface, part on logic and be
 gitGraph
     commit
     branch HaboshBabosh
-    branch tf is this
+    branch "tf is this"
     branch uguggaga
-    overview HaboshBabosh
+    checkout HaboshBabosh
     commit
     commit
     commit
+    checkout main
     merge HaboshBabosh
-    overview tf is this
+    checkout "tf is this"
     commit
-    merge tf is this
+    checkout main
+    merge "tf is this"
     branch wth
-    overveiw wth
+    checkout wth
     commit
+    checkout main
     merge wth
-    overview uguggaga
+    checkout uguggaga
     commit
     commit
+    checkout main
     merge uguggaga
 ```
 
