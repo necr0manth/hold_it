@@ -1,5 +1,6 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
@@ -24,6 +25,7 @@ import net.minecraft.world.entity.EntityType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
@@ -40,24 +42,23 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         super(AwesomeEntityTypes.BIG_BALL_SPELL_SHAPE.get(), caster, spell, world);
     }
 
-    public static final float defaultPower = 0.7f;
-    public static final float distanceToProjectile = 2.5f;
+    public static final float defaultPower = 3f;
+    public static final float distanceToProjectile = 60.5f;
 
     public static float radius() {
-        return 5;
+        return 10f;
+    }
+
+    public float magnitude() {
+        return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.MAGNITUDE);
     }
 
     public static float chargeTime() {
-        return 7;
+        return 3f;
     }
 
     public static float maxChargeTime() {
-        return 30;
-    }
-
-    @Override
-    public boolean isPrepared() {
-        return true;
+        return 20;
     }
 
     @Override
@@ -119,23 +120,30 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
 
     @Override
     public float getRequestedManaCost() {
-        return 0;
+        return Math.min(getCharge() * magnitude() * getCastingSpellManaCost(), getCasterMana());
     }
+
+    private float getCharge() {
+        return Math.max(getLifetime() / chargeTime(), 1);
+    }
+
 
     protected List<SpellTarget> target() {
         var targets = new ArrayList<SpellTarget>();
         var sphere = ballRef.get();
+        float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
+        float radius = radius() * power;
         if (sphere == null) return targets;
 
-        level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius()),
-                        (Entity e) -> e != this && e != sphere && e.position().distanceTo(sphere.position()) < radius())
+        level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius),
+                        (Entity e) -> e != this && e != sphere && e.position().distanceTo(sphere.position()) < radius)
                 .stream().map(SpellTarget::new).forEach(targets::add);
 
-        for (int i = -Mth.ceil(radius()); i <= Mth.ceil(radius()); i++) {
-            for (int j = -1; j <= Mth.ceil(radius()); j++) {
-                for (int k = -Mth.ceil(radius()); k <= Mth.ceil(radius()); k++) {
+        for (int i = -Mth.ceil(radius); i <= Mth.ceil(radius); i++) {
+            for (int j = -1; j <= Mth.ceil(radius); j++) {
+                for (int k = -Mth.ceil(radius); k <= Mth.ceil(radius); k++) {
                     var pos = BlockPos.containing(sphere.position().add(i, j, k));
-                    if (pos.getCenter().distanceTo(sphere.position()) > radius())
+                    if (pos.getCenter().distanceTo(sphere.position()) > radius)
                         continue;
                     if (level().getBlockState(pos).isAir())
                         continue;
@@ -153,7 +161,7 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         if (level().isClientSide)
             return;
         var ball = ballRef.get();
-        ball.shoot(ball.position().subtract(getCaster().getEyePosition()).normalize());
+        ball.shoot(ball.getBoundingBox().getCenter().subtract(getCaster().getEyePosition()).normalize());
     }
 
     @Override

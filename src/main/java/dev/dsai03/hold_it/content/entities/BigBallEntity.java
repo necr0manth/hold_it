@@ -1,10 +1,15 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.affinity.Affinity;
+import com.mna.api.particles.MAParticleType;
+import com.mna.api.particles.ParticleInit;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.content.client.particles.ParticleBallFx;
+import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.lightnings.LightningBall;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.Entity2EntityReference;
@@ -31,13 +36,16 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.awt.*;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class BigBallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<CompoundTag> SPELL = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final EntityDataAccessor<Float> MAX_POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
     private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(BigBallEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
@@ -78,14 +86,9 @@ public class BigBallEntity extends ThrowableProjectile {
     public void tick() {
         var caster = getCaster();
         if (caster != null && getOwner() != null) {
-            var ballData = new BallData(caster.getEyePosition().add(caster.getLookAngle().scale(3)), 2);
-            setPower(ballData.power());
-            setPos(ballData.pos().subtract(0, ballData.power() / 2, 0));
+            setPos(caster.getEyePosition().add(caster.getLookAngle().scale(5)).subtract(0, entityData.get(POWER) / 2, 0));
         }
-        if (caster != null && getOwner() == null && getDeltaMovement().length() < 0.02) {
-            entityData.set(THROWN, true);
-            onHit(position());
-        }
+
         super.tick();
         if (entityData.get(POWER) != lastPower && !this.level().isClientSide) {
             lastPower = entityData.get(POWER);
@@ -94,13 +97,49 @@ public class BigBallEntity extends ThrowableProjectile {
         if (level().isClientSide)
             clientTick();
     }
+    private LightningBall lightningBall;
+    @OnlyIn(Dist.CLIENT)public void clientTick() {
+        var affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
+        var affinities = AffinityDistribution.fromSpell(spellHolder.getSpell());
+        float power = entityData.get(POWER);
+        float coreRadius = 0.05f + 0.95f * power;
+        int particleCount = (int) (20 + 45 * power);
+        Random random = new Random();
+// Handle LightningBall for lightning affinity
+        if (affinities.getAffinity(Affinity.LIGHTNING) != 0 && lightningBall == null) {
+            var baseColor = new Color(100, 67, 255);
+            float heightOffset = 1.0f; // Match particle offset
+            lightningBall = new LightningBall(Minecraft.getInstance().level, 10, baseColor, new Color(255, 67, 255), () -> 0.3f + 0.5f * entityData.get(POWER), () -> isRemoved() ? null : position().add(0, heightOffset, 0));
+            lightningBall.spawn(0.3f);
+        } else if (affinities.getAffinity(Affinity.LIGHTNING) == 0 && lightningBall != null) {
+            lightningBall.fadeOut(0.5f);
+            lightningBall = null;
+        }
 
-    @OnlyIn(Dist.CLIENT)
-    public void clientTick() {
-        fxData = new ParticleBallFx.BallFxData(pt -> spellHolder.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spellHolder.getSpell()));
-        if (fx == null)
-            fx = new ParticleBallFx(() -> fxData, this::getFxBallData);
-        fx.tick();
+        float heightOffset = 1.0f;
+        Vec3 centerPos = position().add(0, heightOffset, 0);
+        for (int i = 0; i < particleCount; i++) {
+            if (random.nextFloat() < (true ? 0.5f : 0.3f)) {
+                double theta = random.nextDouble() * Math.PI;
+                double phi = random.nextDouble() * Math.PI * 2;
+                double r = affinity == Affinity.WIND ? coreRadius * 0.5 * (0.9 + 0.2 * random.nextDouble()) : coreRadius * (0.9 + 0.2 * random.nextDouble());
+
+                Vec3 pos = centerPos.add(
+                        r * Math.sin(theta) * Math.cos(phi),
+                        r * Math.cos(theta),
+                        r * Math.sin(theta) * Math.sin(phi)
+                );
+                ParticleUtils.addParticle(
+                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
+                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128, 0, 32) :
+                                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
+                        position().subtract(pos).normalize().scale(0.03),
+                        ParticleUtils.EMPTY_TICKER,
+                        affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(affinity == Affinity.LIGHTNING ? 25 : 40))
+                );
+            }
+        }
+
     }
 
     public void setPower(float power) {
@@ -117,7 +156,8 @@ public class BigBallEntity extends ThrowableProjectile {
                 renderBallData = null;
             else {
                 var partialTick = Minecraft.getInstance().getFrameTime();
-                renderBallData = new BallData(new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ())).add(caster.getViewVector(partialTick).scale(3)), 2);
+                float power = entityData.get(POWER);
+                renderBallData = new BallData(new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ())).add(caster.getViewVector(partialTick).scale(3)), power);
             }
         } else
             renderBallData = new BallData(new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0), entityData.get(POWER));
@@ -129,7 +169,6 @@ public class BigBallEntity extends ThrowableProjectile {
             return null;
         return renderBallData;
     }
-
 
     public BigBallSpellShapeEntity getOwner() {
         var superOwner = super.getOwner();
@@ -220,7 +259,7 @@ public class BigBallEntity extends ThrowableProjectile {
             return;
         }
         var targets = new ArrayList<SpellTarget>();
-        var power = entityData.get(POWER);
+        var power = entityData.get(POWER)*2.5;
         for (int i = -Mth.ceil(power); i <= Mth.ceil(power); i++) {
             for (int j = -Mth.ceil(power); j <= Mth.ceil(power); j++) {
                 for (int k = -Mth.ceil(power); k <= Mth.ceil(power); k++) {

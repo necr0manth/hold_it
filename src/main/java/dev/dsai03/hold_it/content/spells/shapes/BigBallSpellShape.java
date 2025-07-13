@@ -23,7 +23,7 @@ public class BigBallSpellShape extends BaseChargeableSpellShape<BigBallSpellShap
 
     @Override
     public int baselineCooldown() {
-        return 70;
+        return 10;
     }
 
     @Override
