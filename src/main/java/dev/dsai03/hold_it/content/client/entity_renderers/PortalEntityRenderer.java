@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -42,7 +43,7 @@ public class PortalEntityRenderer extends EntityRenderer<PortalEntity> {
     private float getScale(PortalEntity portal, float fadeIn, float fadeOut, float partialTick) {
         var time = portal.tickCount + partialTick;
         var remainingTime = portal.getRemainingLifetime() - partialTick;
-        return time < fadeIn ? time / fadeIn : remainingTime < fadeOut ? remainingTime / fadeOut : 1;
+        return MathUtils.clamp01(time < fadeIn ? time / fadeIn : remainingTime < fadeOut ? remainingTime / fadeOut : 1);
     }
 
     private void renderDefaultPortal(PortalEntity portal, PoseStack pose, MultiBufferSource bufferSource, int packedLight, float partialTick, int[] color) {

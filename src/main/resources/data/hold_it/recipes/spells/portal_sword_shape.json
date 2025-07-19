@@ -1,8 +1,14 @@
 {
-  "type": "mana-and-artifice:shape",
-  "shape": "hold_it:portal_sword_shape",
-  "components": [],
-  "affinities": [],
-  "complexity": 15,
-  "mana_cost": 500
-} 
+  "type": "mna:shape",
+  "output": "hold_it:portal_sword_shape",
+  "tier": 3,
+  "items":
+  [
+    "minecraft:porkchop",
+    "minecraft:tnt"
+  ],
+  "patterns":
+  [
+    "mna:manaweave_patterns/circle"
+  ]
+}

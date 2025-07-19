@@ -1,7 +1,7 @@
 {
 	"type": "mna:shape",
 	"output": "hold_it:cool_shape",
-	"tier": 1,
+	"tier": 3,
 	"items":
 	[
 		"minecraft:porkchop",

@@ -13,6 +13,7 @@ import com.mna.tools.math.MathUtils;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.util.AffinityDistribution;
+import dev.dsai03.hold_it.util.MyAwesomeMathUtils;
 import dev.dsai03.hold_it.util.SpellUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -184,17 +185,17 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
 
                                     int subdivisions = Mth.ceil(pos1.subtract(circleCenter).toVector3f().angle(pos0.subtract(circleCenter).toVector3f()) * Mth.RAD_TO_DEG / angleStep);
                                     for (int i2 = 0; i2 < subdivisions; i2++) {
-                                        var pos2 = rotateTowards(pos0.subtract(circleCenter), pos1.subtract(circleCenter), angleStep * i2 * Mth.DEG_TO_RAD).add(circleCenter).add(new Vec3(dir.step()).scale(0.01));
+                                        if(Math.random()<0.9)
+                                            continue;
+                                        var pos2 = MyAwesomeMathUtils.rotateTowards(pos0.subtract(circleCenter), pos1.subtract(circleCenter), angleStep * i2 * Mth.DEG_TO_RAD).add(circleCenter).add(new Vec3(dir.step()).scale(0.01));
                                         var blockPos = BlockPos.containing(pos2.x, pos2.y, pos2.z);
                                         var state1 = level().getBlockState(blockPos);
-                                        if (state1.isAir()) {
-                                            var shape1 = state1.getCollisionShape(level(), blockPos);
-                                            if (shape1.toAabbs().stream().noneMatch(a1 -> a1.contains(pos2.subtract(blockPos.getX(), blockPos.getY(), blockPos.getZ()))))
-                                                ParticleUtils.addParticle(
-                                                        ParticleUtils.createDefaultConfiguredColoredParticleType(affinities.getRandomAffinity(), getSpell(), getCaster()),
-                                                        pos2, new Vec3(dir.step()).scale(0.005)
-                                                );
-                                        }
+                                        if (state1.isAir() || state1.getCollisionShape(level(), blockPos).toAabbs().stream().noneMatch(a1 -> a1.contains(pos2.subtract(blockPos.getX(), blockPos.getY(), blockPos.getZ()))))
+                                            ParticleUtils.addParticle(
+                                                    ParticleUtils.createDefaultConfiguredColoredParticleType(affinities.getRandomAffinity(), getSpell(), getCaster()),
+                                                    pos2, new Vec3(dir.step()).scale(0.005)
+                                            );
+
                                     }
                                 }
                             }
@@ -209,11 +210,6 @@ public class CoolShapeEntity extends ChargeableSpellEntity {
             var affinity = affinities.getRandomAffinity();
             level().addParticle(ParticleUtils.createDefaultConfiguredColoredParticleType(affinity, getSpell(), getCaster()), p.x, p.y, p.z, 0, 0, 0);
         }
-    }
-
-    public static Vec3 rotateTowards(Vec3 current, Vec3 target, float angle) {
-        angle = Math.min(current.toVector3f().angle(target.toVector3f()), angle);
-        return new Vec3(new AxisAngle4f(angle, current.cross(target).toVector3f().normalize()).transform(current.toVector3f()));
     }
 
     public float getMaxManaCost() {
