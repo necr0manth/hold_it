@@ -1,35 +1,31 @@
 package dev.dsai03.hold_it.content.entities;
 
-import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.tools.math.MathUtils;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.offseted_particles.OffsetedParticle;
+import dev.dsai03.hold_it.content.client.particles.offseted_particles.OffsetedParticleEngine;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
-import dev.dsai03.hold_it.util.AffinityDistribution;
-import dev.dsai03.hold_it.util.Entity2EntityReference;
-import dev.dsai03.hold_it.util.SpellHolder;
-import dev.dsai03.hold_it.util.TargetTracker;
+import dev.dsai03.hold_it.util.*;
 import lombok.Builder;
+import net.minecraft.client.Minecraft;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.joml.Quaterniond;
 
 import java.util.Comparator;
-import java.util.Random;
 
 public class PortalEntity extends Entity {
     private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(PortalEntity.class);
@@ -82,11 +78,19 @@ public class PortalEntity extends Entity {
 
     @Override
     public void tick() {
+        if(getCaster() == null || getSpell() == null) {
+            discard();
+            return;
+        }
+        super.tick();
         if (!level().isClientSide) {
-            float followViewFactor = isActivated() ? (float) (tickCount - entityData.get(ACTIVATION_TIME)) / followViewTime : 1;
+            float followViewFactor = isActivated() ? MathUtils.clamp01(1 - (float) (tickCount - entityData.get(ACTIVATION_TIME)) / followViewTime) : 1;
             var currentView = getLookAngle();
             var targetView = getCaster().getLookAngle();
-            lookAt(EntityAnchorArgument.Anchor.FEET, position().add(MathUtils.rotateTowards(currentView, targetView, followViewFactor * followViewSpeed)));
+            var target = MathUtils.rotateTowards(currentView, targetView, followViewFactor * followViewSpeed);
+            double d3 = Math.sqrt(target.x * target.x + target.z * target.z);
+            this.setXRot(Mth.wrapDegrees((float) (-(Mth.atan2(target.y, d3) * (double) (180F / (float) Math.PI)))));
+            this.setYRot(Mth.wrapDegrees((float) (Mth.atan2(target.z, target.x) * (double) (180F / (float) Math.PI)) - 90.0F));
             if (isActivated()) {
                 if (Math.random() < (frequency * entityData.get(LIFETIME) - (float) launchedSwords) / getRemainingLifetime()) {
                     launchSword();
@@ -95,7 +99,6 @@ public class PortalEntity extends Entity {
             if (getRemainingLifetime() <= 0)
                 discard();
         }
-        super.tick();
         if (level().isClientSide) {
             clientTick();
         }
@@ -131,7 +134,31 @@ public class PortalEntity extends Entity {
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-
+        for (int i = 0; i < 10; i++) {
+            var affinity = AffinityDistribution.fromSpell(getSpell()).getRandomAffinity();
+            var particleType = getSpell().colorParticle(ParticleUtils.configureParticleAffinity(new MAParticleType(ParticleUtils.getParticleType(affinity)), affinity), getCaster());
+            if (particleType == null)
+                break;
+            var offsetedParticle = new OffsetedParticle(ParticleUtils.createParticle(particleType, Minecraft.getInstance().level, RandomUtils.randomXYVectorFromCircle().scale(getBbWidth()), Vec3.ZERO))
+                    .addRenderTicker((p, dt) -> {
+                        var pos = p.getPos();
+                        var r = pos.multiply(1, 1, 0).length();
+                        var a = 0.08;
+                        var w = 0.04;
+                        var l = 1;
+                        p.setSpeed(new Vec3(-a * pos.x - w * Math.exp(-r * r / l / l) * pos.y, -a * pos.y + w * Math.exp(-r * r / l / l) * pos.x, 0));
+                    })
+//                    .addRenderTicker(ParticleUtils.fadeOut(0.4f).asRenderTicker())
+//                    .addRenderTicker(ParticleUtils.fadeIn(0.4f).asRenderTicker())
+                    .maxLifetime(50);
+            offsetedParticle.offset(() -> {
+                var localPosition = offsetedParticle.getPos();
+                var transform = new Quaterniond().rotationYXZ((180 - getYRot()) * Mth.DEG_TO_RAD, -getXRot() * Mth.DEG_TO_RAD, 0);
+                var transformedLocalPosition = transform.transform(localPosition.toVector3f());
+                return getBoundingBox().getCenter().add(new Vec3(transformedLocalPosition)).subtract(localPosition);
+            });
+            OffsetedParticleEngine.instance.addParticle(offsetedParticle);
+        }
     }
 
     @Override

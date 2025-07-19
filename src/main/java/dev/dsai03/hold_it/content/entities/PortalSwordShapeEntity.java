@@ -1,10 +1,12 @@
 package dev.dsai03.hold_it.content.entities;
 
+import com.mna.api.sound.SFX;
 import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
+import dev.dsai03.hold_it.util.AffinityDistribution;
 import dev.dsai03.hold_it.util.SpellUtils;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
@@ -68,11 +70,11 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
         }
         if (tooClose) return;
 
-        PortalEntity portal = new PortalEntity(level(), getCaster(), getSpell(), portalPos, (int) ((duration() + Math.random()) * 20), speed() / 20, 0.1f, (int) (20 * duration() * 0.2f), 20, 0.1f, 0.5f, 0.01f);
+        PortalEntity portal = new PortalEntity(level(), getCaster(), getSpell(), portalPos, (int) ((duration() + Math.random()) * 20), speed() / 20, 0.04f, (int) (20 * duration() * 0.1f), 20, 0.5f, 0.5f, 0.06f);
         portal.lookAt(EntityAnchorArgument.Anchor.FEET, portalPos.add(getCaster().getLookAngle()));
         level().addFreshEntity(portal);
         portals.add(portal);
-        level().playSound(null, portalPos.x, portalPos.y, portalPos.z, SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 1.0F, 1.0F);
+        level().playSound(null, portalPos.x, portalPos.y, portalPos.z, SFX.Spell.Cast.ForAffinity(AffinityDistribution.fromSpell(getSpell()).getMaxAffinity()), SoundSource.PLAYERS, 0.4f, 1.0F);
     }
 
     @Override
@@ -85,7 +87,7 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
 
     @Override
     public float getRequestedManaCost() {
-        return Math.min(magnitude(), getLifetime() / portalSpawnDelay()) * getBaseSpellManaCost();
+        return (float) (0.5* Math.min(magnitude(), getLifetime() / portalSpawnDelay()) * speed() * Math.sqrt(duration()) * getBaseSpellManaCost());
     }
 
     protected void applySpell(float manaCost, float casterMana) {

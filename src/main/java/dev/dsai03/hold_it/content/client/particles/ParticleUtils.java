@@ -3,12 +3,11 @@ package dev.dsai03.hold_it.content.client.particles;
 import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
 import com.mna.api.particles.ParticleInit;
+import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.particles.bolt.FXLightningBolt;
 import com.mna.particles.bolt.LightningData;
 import com.mna.tools.math.Vector3;
-import dev.dsai03.hold_it.content.client.particles.core.BaseParticle;
-import dev.dsai03.hold_it.content.client.particles.core.IColoredParticle;
-import dev.dsai03.hold_it.mixins.client.ParticleAccessor;
+import dev.dsai03.hold_it.content.client.particles.core.*;
 import dev.dsai03.hold_it.mixins.client.ParticleEngineAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -16,6 +15,7 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -114,54 +114,6 @@ public class ParticleUtils {
         return ((ParticleProvider<ParticleOptions>) ((ParticleEngineAccessor) particleEngine).getProviders().get(BuiltInRegistries.PARTICLE_TYPE.getKey(particleOptions.getType()))).createParticle(particleOptions, level, pos.x, pos.y, pos.z, velocity.x, velocity.y, velocity.z);
     }
 
-    public static class ParticleAccess {
-        public final ParticleAccessor accessor;
-        public final Particle particle;
-
-        public ParticleAccess(Particle particle) {
-            this.particle = particle;
-            this.accessor = (ParticleAccessor) particle;
-        }
-
-        public Vec3 getVelocity() {
-            return new Vec3(accessor.getXd(), accessor.getYd(), accessor.getZd());
-        }
-
-        public void setVelocity(Vec3 velocity) {
-            accessor.setXd(velocity.x);
-            accessor.setYd(velocity.y);
-            accessor.setZd(velocity.z);
-        }
-
-        public Vec3 getPos() {
-            return particle.getPos();
-        }
-
-        public void setPos(Vec3 pos) {
-            particle.setPos(pos.x, pos.y, pos.z);
-        }
-
-        public Vec3 getPosRaw() {
-            return new Vec3(accessor.getX(), accessor.getY(), accessor.getZ());
-        }
-
-        public Vec3 getPosO() {
-            return new Vec3(accessor.getXo(), accessor.getYo(), accessor.getZo());
-        }
-
-        public void setPosO(Vec3 pos) {
-            accessor.setXo(pos.x);
-            accessor.setYo(pos.y);
-            accessor.setZo(pos.z);
-        }
-
-        public void setPosRaw(Vec3 pos) {
-            accessor.setX(pos.x);
-            accessor.setY(pos.y);
-            accessor.setZ(pos.z);
-        }
-    }
-
     public static final Consumer<ParticleAccess> EMPTY_TICKER = p -> {
     };
 
@@ -214,40 +166,62 @@ public class ParticleUtils {
                 .add(z.scale(Math.sin(Math.toRadians(deg))));
     }
 
-    public static Predicate<BaseParticle<?>> renderTickerToTicker(BiConsumer<BaseParticle<?>, Float> renderTicker) {
+    public static <T> Predicate<T> renderTickerToTicker(BiConsumer<T, Float> renderTicker) {
         return p -> {
             renderTicker.accept(p, 0.05f);
             return false;
         };
     }
 
-    public static BiConsumer<BaseParticle<?>, Float> tickerToRenderTick(Predicate<BaseParticle<?>> ticker) {
+    public static <T> BiConsumer<T, Float> tickerToRenderTick(Predicate<T> ticker) {
         return (p, dt) -> ticker.test(p);
     }
 
-    public static <T extends BaseParticle<T> & IColoredParticle> BiConsumer<T, Float> fadeOut(float time) {
+    public static <T extends IParticleWithMaxLifetime & IColoredParticle> ParticleTickerHolder<T> fadeOut(float time) {
         AtomicReference<Integer> initialAlpha = new AtomicReference<>();
-        return (p, dt) -> {
-            if (p.maxLifetime - p.lifetime <= time) {
+        return new ParticleTickerHolder<>(
+                (p, dt) -> {
+                    if (p.getMaxLifetime() - p.getLifetime() <= time) {
+                        if (initialAlpha.get() == null)
+                            initialAlpha.set(p.getColor().getAlpha());
+                        p.setColor(new Color(p.getColor().getRed() / 255f, p.getColor().getGreen() / 255f, p.getColor().getBlue() / 255f, Math.max(0, (int) (initialAlpha.get() * (p.getMaxLifetime() - p.getLifetime()) / time))));
+                    }
+                });
+    }
+
+    public static <T extends IParticleWithLifetime & IColoredParticle> ParticleTickerHolder<T> fadeIn(float time) {
+        AtomicReference<Integer> initialAlpha = new AtomicReference<>();
+        return new ParticleTickerHolder<>((p, dt) -> {
+            if (p.getLifetime() <= time) {
                 if (initialAlpha.get() == null)
                     initialAlpha.set(p.getColor().getAlpha());
-                p.setColor(new Color(p.getColor().getRed(), p.getColor().getGreen(), p.getColor().getBlue(), Math.max(0, (int) (initialAlpha.get() * (p.maxLifetime - p.lifetime) / time))));
+                p.setColor(new Color(p.getColor().getRed(), p.getColor().getGreen(), p.getColor().getBlue(), Math.min(255, (int) (initialAlpha.get() * p.getLifetime() / time))));
             }
+        });
+    }
+
+    public static <T extends IParticleWithLifetime & IColoredParticle> ParticleTickerHolder<T> fadeIn(float time, float initialAlpha) {
+        return new ParticleTickerHolder<>((p, dt) -> {
+            if (p.getLifetime() <= time) {
+                p.setColor(new Color(p.getColor().getRed(), p.getColor().getGreen(), p.getColor().getBlue(), Math.min(255, (int) (255 * initialAlpha * p.getLifetime() / time))));
+            }
+        });
+    }
+
+    public static MAParticleType configureParticleAffinity(MAParticleType particleType, Affinity affinity) {
+        return switch (affinity) {
+            case BLOOD ->
+                    particleType.setColor(Affinity.BLOOD.getColor()[0], Affinity.BLOOD.getColor()[1], Affinity.BLOOD.getColor()[2]);
+            case WIND -> particleType.setScale(random.nextFloat(0.02f, 0.05f)).setColor(50, 50, 50);
+            default -> particleType;
         };
     }
 
-    public static <T extends BaseParticle<T> & IColoredParticle> BiConsumer<T, Float> fadeIn(float time) {
-        AtomicReference<Integer> initialAlpha = new AtomicReference<>();
-        return (p, dt) -> {
-            if (p.lifetime <= time) {
-                if (initialAlpha.get() == null)
-                    initialAlpha.set(p.getColor().getAlpha());
-                p.setColor(new Color(p.getColor().getRed(), p.getColor().getGreen(), p.getColor().getBlue(), Math.max(0, (int) (initialAlpha.get() * p.lifetime / time))));
-            }
-        };
+    public static MAParticleType createDefaultConfiguredParticleType(Affinity affinity) {
+        return configureParticleAffinity(new MAParticleType(ParticleUtils.getParticleType(affinity)), affinity);
     }
 
-    public static Consumer<ParticleAccess> fadeInHuy(float time) {
-        return p -> p.accessor.setAlpha(Math.min(1, p.particle.getLifetime() / time));
+    public static MAParticleType createDefaultConfiguredColoredParticleType(Affinity affinity, ISpellDefinition spell, LivingEntity caster) {
+        return spell.colorParticle(configureParticleAffinity(new MAParticleType(ParticleUtils.getParticleType(affinity)), affinity), caster);
     }
 }

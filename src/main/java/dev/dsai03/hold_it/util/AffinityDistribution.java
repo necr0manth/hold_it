@@ -4,6 +4,7 @@ import com.mna.api.affinity.Affinity;
 import com.mna.api.spells.base.ISpellDefinition;
 
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 public class AffinityDistribution {
     private volatile float[] distribution;
@@ -106,5 +107,9 @@ public class AffinityDistribution {
 
     public float getAffinity(Affinity affinity) {
         return asArray()[affinity.ordinal()];
+    }
+
+    public Affinity getMaxAffinity() {
+        return Arrays.stream(Affinity.values()).max(Comparator.comparing(this::getAffinity)).orElse(null);
     }
 }

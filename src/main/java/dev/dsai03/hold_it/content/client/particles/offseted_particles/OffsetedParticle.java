@@ -1,20 +1,22 @@
 package dev.dsai03.hold_it.content.client.particles.offseted_particles;
 
-import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.content.client.particles.core.BaseParticle;
+import dev.dsai03.hold_it.content.client.particles.core.IColoredParticle;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleAccess;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.world.phys.Vec3;
 
+import java.awt.*;
 import java.util.function.Supplier;
 
-public class OffsetedParticle extends BaseParticle<OffsetedParticle> {
+public class OffsetedParticle extends BaseParticle<OffsetedParticle> implements IColoredParticle {
     public Supplier<Vec3> offset = () -> Vec3.ZERO;
     public final Particle particle;
-    public final ParticleUtils.ParticleAccess particleAccess;
+    public final ParticleAccess particleAccess;
 
     public OffsetedParticle(Particle particle) {
         this.particle = particle;
-        this.particleAccess = new ParticleUtils.ParticleAccess(particle);
+        this.particleAccess = new ParticleAccess(particle);
         addTicker((p -> {
             particle.tick();
             return !particle.isAlive();
@@ -46,7 +48,17 @@ public class OffsetedParticle extends BaseParticle<OffsetedParticle> {
         return this;
     }
 
-    public Vec3 getOffset(){
+    public Vec3 getOffset() {
         return offset.get();
+    }
+
+    @Override
+    public Color getColor() {
+        return particleAccess.getColor();
+    }
+
+    @Override
+    public void setColor(Color color) {
+        particleAccess.setColor(color);
     }
 }

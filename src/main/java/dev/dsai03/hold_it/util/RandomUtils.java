@@ -23,4 +23,8 @@ public class RandomUtils {
         return new Vec3(random.nextGaussian(), 0, random.nextGaussian()).normalize().scale(Math.pow(random.nextDouble(), 0.5f));
     }
 
+    public static Vec3 randomXYVectorFromCircle() {
+        return new Vec3(random.nextGaussian(), random.nextGaussian(), 0).normalize().scale(Math.pow(random.nextDouble(), 0.5f));
+    }
+
 }

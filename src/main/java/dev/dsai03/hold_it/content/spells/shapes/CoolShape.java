@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 public class CoolShape extends BaseChargeableSpellShape<CoolShapeEntity> {
     public CoolShape(ResourceLocation guiIcon) {
         super(guiIcon, new AttributeValuePair(Attribute.MAGNITUDE, 0.5f, 0, 1, 0.02f, 1),
-                new AttributeValuePair(Attribute.RADIUS, 10, 5, 20, 1, 2));
+                new AttributeValuePair(Attribute.RADIUS, 10, 5, 10, 1, 2));
     }
 
     @Override

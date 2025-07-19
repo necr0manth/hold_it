@@ -12,6 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.Comparator;
+import java.util.Random;
 import java.util.function.Predicate;
 
 public class TargetTracker {
@@ -80,6 +81,8 @@ public class TargetTracker {
     private final Entity entity;
     private final String name;
     private double speed = -1;
+    public double randomness = 0.1;
+    private final Random random = new Random();
 
 
     public TargetTracker(DataAccessor dataAccessor, String name, Predicate<Entity> filter, Entity entity) {
@@ -109,7 +112,7 @@ public class TargetTracker {
             } else {
                 return filter.test(e);
             }
-        }).stream().min(Comparator.comparing(e -> TimeCalculator.calculateTime(entity.position().toVector3f(), e.position().toVector3f(), entity.getDeltaMovement().toVector3f(), getTurnRate()))).orElse(null));
+        }).stream().min(Comparator.comparing(e -> TimeCalculator.calculateTime(entity.position().toVector3f(), e.position().toVector3f(), entity.getDeltaMovement().toVector3f(), getTurnRate()) * random.nextGaussian(1, randomness))).orElse(null));
     }
 
     public void tick() {
@@ -130,7 +133,8 @@ public class TargetTracker {
                     Vec3 calculatedHeading = MathUtils.rotateTowards(entity.getDeltaMovement().normalize(), desiredHeading, tickTheta).normalize().scale(speed);
                     entity.setDeltaMovement(calculatedHeading);
                 }
-            }
+            } else
+                entity.setDeltaMovement(entity.getDeltaMovement().normalize().scale(speed));
         }
     }
 
@@ -138,6 +142,7 @@ public class TargetTracker {
         var tag = new CompoundTag();
         targetRef.save(tag);
         tag.putFloat("turnRate", entity.getEntityData().get(dataAccessor.TURN_RATE));
+        tag.putDouble("speed", speed);
         compound.put(name, tag);
     }
 
@@ -145,6 +150,7 @@ public class TargetTracker {
         var tag = compound.getCompound(name);
         targetRef.load(tag);
         setTurnRate(tag.getFloat("turnRate"));
+        speed = tag.getDouble("speed");
     }
 
     public Entity getTarget() {
