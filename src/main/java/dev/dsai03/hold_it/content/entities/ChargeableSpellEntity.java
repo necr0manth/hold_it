@@ -78,7 +78,7 @@ public abstract class ChargeableSpellEntity extends Entity {
 
     public void adjustSpell(SpellAdjustingContext context) {
         if (overrideManaCost)
-            context.spell.setManaCost(getRequestedManaCost());
+            context.spell.setManaCost(getManaCost());
     }
 
     public ChargeableSpellEntity(EntityType<? extends ChargeableSpellEntity> entityType, Level world) {
@@ -143,28 +143,32 @@ public abstract class ChargeableSpellEntity extends Entity {
         ISpellDefinition recipe = getSpell();
         if (spellCasted)
             return;
-        if (!level().isClientSide) {
-            if (caster == null) {
+
+        if (caster == null) {
+            if (!level().isClientSide)
                 interrupt(InterruptReason.OTHER);
-                return;
-            }
-            if (recipe == null || !recipe.isValid()) {
+            return;
+        }
+        if (recipe == null || !recipe.isValid()) {
+            if (!level().isClientSide)
                 interrupt(InterruptReason.INVALID_RECIPE);
-                return;
-            }
-            if (!caster.isAlive()) {
+            return;
+        }
+        if (!caster.isAlive()) {
+            if (!level().isClientSide)
                 interrupt(InterruptReason.DEAD_CASTER);
-                return;
-            }
-            if (!caster.level().dimension().equals(level().dimension()) || caster.getUseItemRemainingTicks() <= 0) {
+            return;
+        }
+        if (!caster.level().dimension().equals(level().dimension()) || caster.getUseItemRemainingTicks() <= 0) {
+            if (!level().isClientSide)
                 interrupt(InterruptReason.INVALID_CASTER);
-                return;
-            }
-            if (getCaster() instanceof Player player) {
+            return;
+        }
+        if (getCaster() instanceof Player player) {
+            if (!level().isClientSide)
                 player.getCapability(PlayerMagicProvider.MAGIC).ifPresent(magic -> {
                     magic.getCastingResource().addRegenerationModifier("chargeableSpell", -1);
                 });
-            }
         }
         spellTick();
     }

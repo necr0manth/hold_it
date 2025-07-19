@@ -6,6 +6,7 @@ import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
+import com.mna.tools.math.MathUtils;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.*;
@@ -70,16 +71,19 @@ public class SwordEntity extends ThrowableProjectile {
     public void tick() {
         if (!level().isClientSide) {
             if (entityData.get(THROWN)) {
-                targetTracker.setTurnRate(0.2f);
                 targetTracker.tick();
             }
         }
         super.tick();
-        lookAt(EntityAnchorArgument.Anchor.FEET, getDeltaMovement().add(position()));
+        if (!getDeltaMovement().equals(Vec3.ZERO))
+            lookAt(EntityAnchorArgument.Anchor.FEET, getDeltaMovement().add(position()));
 
 
         if (level().isClientSide)
             clientTick();
+
+        if (tickCount >= maxLifetime())
+            discard();
     }
 
     @Override
@@ -91,20 +95,14 @@ public class SwordEntity extends ThrowableProjectile {
     public void clientTick() {
         if (spellHolder.getSpell() == null)
             return;
-        if (tickCount % 2 == 0) {
+        for (int i = 0; i < 10 * getAlphaPercentage(); i++) {
             Affinity affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
-            Vec3 trailPos = position().add(
-                    (random.nextDouble() - 0.5) * 0.2,
-                    (random.nextDouble() - 0.5) * 0.2,
-                    (random.nextDouble() - 0.5) * 0.2
-            );
-
             ParticleUtils.addParticle(
-                    spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getCaster()),
-                    trailPos,
-                    Vec3.ZERO,
+                    spellHolder.getSpell().colorParticle(ParticleUtils.configureParticleAffinity(new MAParticleType(ParticleUtils.getParticleType(affinity)), affinity), getCaster()),
+                    getBoundingBox().getCenter().add(RandomUtils.randomVectorFromBall().scale(getBbWidth() / 2)),
+                    RandomUtils.randomVectorFromBall().scale(0.03),
                     ParticleUtils.EMPTY_TICKER,
-                    ParticleUtils.relativeTo(() -> position(), ParticleUtils.EMPTY_TICKER)
+                    ParticleUtils.fadeOut(0.5f).asConsumerTicker()
             );
         }
     }
@@ -128,6 +126,10 @@ public class SwordEntity extends ThrowableProjectile {
 
     public void setSpell(ISpellDefinition spell) {
         spellHolder.setSpell(spell);
+    }
+
+    public ISpellDefinition getSpell() {
+        return spellHolder.getSpell();
     }
 
     @Override
@@ -216,5 +218,17 @@ public class SwordEntity extends ThrowableProjectile {
 
     public ItemStack getItem() {
         return new ItemStack(Items.IRON_SWORD);
+    }
+
+    public int maxLifetime() {
+        return 100;
+    }
+
+    public float fadeOutTime() {
+        return 30;
+    }
+
+    public float getAlphaPercentage() {
+        return MathUtils.clamp01((maxLifetime() - tickCount) / fadeOutTime());
     }
 }

@@ -1,10 +1,13 @@
 package dev.dsai03.hold_it.content.client.entity_renderers;
 
+import com.mna.tools.math.MathUtils;
 import com.mna.tools.render.MARenderTypes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import dev.dsai03.hold_it.content.entities.PortalEntity;
+import dev.dsai03.hold_it.util.AffinityDistribution;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -14,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
+import java.awt.*;
+
 public class PortalEntityRenderer extends EntityRenderer<PortalEntity> {
 
     public PortalEntityRenderer(EntityRendererProvider.Context context) {
@@ -21,7 +26,16 @@ public class PortalEntityRenderer extends EntityRenderer<PortalEntity> {
     }
 
     public void render(PortalEntity entity, float entityYaw, float partialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn) {
+        var baseColor = new Color(0, 0, 0);
+        for (var affinity : AffinityDistribution.fromSpell(entity.getSpell()).normalized().asMap().entrySet()) {
+            baseColor = new Color(
+                    MathUtils.clamp01((baseColor.getRed() + affinity.getKey().getColor()[0] * affinity.getValue()) / 255f),
+                    MathUtils.clamp01((baseColor.getGreen() + affinity.getKey().getColor()[1] * affinity.getValue()) / 255f),
+                    MathUtils.clamp01((baseColor.getBlue() + affinity.getKey().getColor()[2] * affinity.getValue())) / 255f);
+        }
         var color = entity.getSpell().getParticleColorOverride();
+        if (color == -1)
+            color = baseColor.getRGB();
         this.renderDefaultPortal(entity, matrixStackIn, bufferIn, packedLightIn, partialTicks, new int[]{color >> 16, (color >> 8) & 0xFF, color & 0xFF});
     }
 
@@ -35,18 +49,17 @@ public class PortalEntityRenderer extends EntityRenderer<PortalEntity> {
         float scaleFactor = 2 * this.getScale(portal, 20, 20, partialTick);
         float portalSpinDegrees = (float) (portal.tickCount * 3 % 360);
         VertexConsumer vertexBuilder = bufferSource.getBuffer(MARenderTypes.PORTAL_RENDER);
-        this.renderPortalTexture(portal, pose, vertexBuilder, packedLight, color, 230, scaleFactor, portalSpinDegrees, 0.0F);
+        this.renderPortalTexture(portal, pose, vertexBuilder, packedLight, color, 230, scaleFactor, portalSpinDegrees, partialTick);
         pose.translate(0.0F, 0.0F, 0.05F);
-        this.renderPortalTexture(portal, pose, vertexBuilder, packedLight, color, 230, scaleFactor, -portalSpinDegrees, 0.0F);
+        this.renderPortalTexture(portal, pose, vertexBuilder, packedLight, color, 230, scaleFactor, -portalSpinDegrees, partialTick);
     }
 
-    private void renderPortalTexture(PortalEntity entity, PoseStack pose, VertexConsumer vertexBuilder, int packedLight, int[] color, int alpha, float scaleFactor, float spin, float tilt) {
+    private void renderPortalTexture(PortalEntity entity, PoseStack pose, VertexConsumer vertexBuilder, int packedLight, int[] color, int alpha, float scaleFactor, float spin, float partialTick) {
         pose.pushPose();
         pose.translate(0, entity.getBbHeight() / 2, 0);
-        pose.mulPose(Axis.YP.rotationDegrees(-entity.getYRot()));
-        pose.mulPose(Axis.XP.rotationDegrees(entity.getXRot()));
+        pose.mulPose(Axis.YP.rotationDegrees(-entity.getViewYRot(partialTick)));
+        pose.mulPose(Axis.XP.rotationDegrees(entity.getViewXRot(partialTick)));
         pose.scale(scaleFactor, scaleFactor, scaleFactor);
-        pose.mulPose(Axis.XP.rotationDegrees(tilt));
         pose.mulPose(Axis.YP.rotationDegrees(180.0F));
         pose.mulPose(Axis.ZP.rotationDegrees(spin));
         pose.translate(0.0F, -0.25F, 0.0F);

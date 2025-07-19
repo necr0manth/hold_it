@@ -3,11 +3,14 @@ package dev.dsai03.hold_it.content.entities;
 import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
 import com.mna.api.particles.ParticleInit;
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleAccess;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleTickerHolder;
 import dev.dsai03.hold_it.content.client.particles.lightnings.LightningBall;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.*;
@@ -112,32 +115,38 @@ public class SphereEntity extends Projectile {
 
         if (level().isClientSide || getOwner() == null) return;
 
-        List<SpellTarget> targets = new ArrayList<SpellTarget>();
+        List<SpellTarget> blockTargets = new ArrayList<>();
         float powerFactor = getPower() / entityData.get(MAX_POWER);
         float dynamicRadius = (5 * powerFactor) * entityData.get(MAX_RADIUS);
-//
-        level().getEntities(getOwner(), this.getBoundingBox().inflate(dynamicRadius),
-                        (Entity e) -> e != this && e.position().distanceTo(this.position()) < dynamicRadius)
-                .stream().map(SpellTarget::new).forEach(targets::add);
 
-        for (int i = -Mth.ceil(dynamicRadius); i <= Mth.ceil(dynamicRadius); i++) {
-            for (int j = -1; j <= Mth.ceil(dynamicRadius); j++) {
-                for (int k = -Mth.ceil(dynamicRadius); k <= Mth.ceil(dynamicRadius); k++) {
-                    var pos = BlockPos.containing(this.position().add(i, j, k));
-                    if (pos.getCenter().distanceTo(this.position()) > dynamicRadius)
-                        continue;
-                    if (level().getBlockState(pos).isAir())
-                        continue;
-                    if (j == -1)
-                        targets.add(new SpellTarget(pos, Direction.UP));
-                    else
-                        targets.add(new SpellTarget(pos, null));
+        List<SpellTarget> targets = new ArrayList<>();
+        if(precision() != 2) {
+            level().getEntities(getOwner(), this.getBoundingBox().inflate(dynamicRadius),
+                            (Entity e) -> e != this && e.position().distanceTo(this.position()) < dynamicRadius)
+                    .stream().map(SpellTarget::new).forEach(targets::add);
+        }
+
+        if(precision() != 1) {
+            for (int i = -Mth.ceil(dynamicRadius); i <= Mth.ceil(dynamicRadius); i++) {
+                for (int j = -1; j <= Mth.ceil(dynamicRadius); j++) {
+                    for (int k = -Mth.ceil(dynamicRadius); k <= Mth.ceil(dynamicRadius); k++) {
+                        var pos = BlockPos.containing(this.position().add(i, j, k));
+                        if (pos.getCenter().distanceTo(this.position()) > dynamicRadius)
+                            continue;
+                        if (level().getBlockState(pos).isAir())
+                            continue;
+                        if (j == -1)
+                            blockTargets.add(new SpellTarget(pos, Direction.UP));
+                        else
+                            blockTargets.add(new SpellTarget(pos, null));
+                    }
                 }
             }
+            Collections.shuffle(blockTargets);
+            targets.addAll(blockTargets);
         }
-        Collections.shuffle(targets);
         var targetCount = (int) (entityData.get(MAX_MAGNITUDE) * getPower() * entityData.get(MAX_RADIUS) / entityData.get(MAX_POWER));
-        targets = targets.subList(0, Math.min(targetCount, targets.size()));
+        targets = targets.subList(0, Math.min(targetCount, blockTargets.size()));
         for (var target : targets) {
             SpellSource source = new SpellSource(casterRef.get(), InteractionHand.MAIN_HAND);
             SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
@@ -199,13 +208,13 @@ public class SphereEntity extends Projectile {
 
                 ParticleUtils.addParticle(
                         affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
-                                affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(155,38,182) :
-                                        affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128,5,0)
-                                : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
+                                affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(155, 38, 182) :
+                                        affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128, 5, 0)
+                                                : spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()),
                         pos,
                         tangent.scale(speed),
                         ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(75))
+                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(25 / 20f, 1).asConsumerTicker()) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(15 / 20f, 1).asConsumerTicker()) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(75 / 20f, 1).asConsumerTicker())
                 );
             } else {
                 for (int i3 = 0; i3 < 3; i3++) {
@@ -243,15 +252,15 @@ public class SphereEntity extends Projectile {
 
                     ParticleUtils.addParticle(
                             affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(particleSize).setColor(177, 201, 223) :
-                            affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(particleSize).setColor(155,38,182) :
-                                    affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(particleSize).setColor(128,5,0) :
-                                            spellHolder.getSpell().colorParticle(
-                                    new MAParticleType(ParticleUtils.getParticleType(affinity)),
-                                    getOwner()).setScale(particleSize),
+                                    affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(particleSize).setColor(155, 38, 182) :
+                                            affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(particleSize).setColor(128, 5, 0) :
+                                                    spellHolder.getSpell().colorParticle(
+                                                            new MAParticleType(ParticleUtils.getParticleType(affinity)),
+                                                            getOwner()).setScale(particleSize),
                             pos,
                             rotatedVelocity,
                             ParticleUtils.EMPTY_TICKER,
-                            ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(165))
+                            ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeIn(165 / 20f, 1).asConsumerTicker())
                     );
                 }
             }
@@ -269,16 +278,16 @@ public class SphereEntity extends Projectile {
                     );
                     ParticleUtils.addParticle(
                             affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
-                                    affinity == Affinity.FIRE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(255,43,20), getOwner()) :
-                                            affinity == Affinity.ICE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(111,122,159), getOwner()) :
-                                                    affinity == Affinity.ARCANE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128,49,167), getOwner()) :
-                                                            affinity == Affinity.LIGHTNING ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128,49,167), getOwner()) :
-                                                                    affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128,5,0) :
-                                                                            affinity == Affinity.EARTH ? new MAParticleType(ParticleInit.DUST.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(220,88,42) :
-                                                    spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
+                                    affinity == Affinity.FIRE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(255, 43, 20), getOwner()) :
+                                            affinity == Affinity.ICE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(111, 122, 159), getOwner()) :
+                                                    affinity == Affinity.ARCANE ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128, 49, 167), getOwner()) :
+                                                            affinity == Affinity.LIGHTNING ? spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128, 49, 167), getOwner()) :
+                                                                    affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128, 5, 0) :
+                                                                            affinity == Affinity.EARTH ? new MAParticleType(ParticleInit.DUST.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(220, 88, 42) :
+                                                                                    spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
                             position().subtract(pos).normalize().scale(0.03),
                             ParticleUtils.EMPTY_TICKER,
-                            affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(325)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(60))
+                            affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeIn(325 / 20f, 1).asConsumerTicker()) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(15 / 20f, 1).asConsumerTicker()) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(60 / 20f, 1).asConsumerTicker())
                     );
                 }
             }
@@ -291,15 +300,15 @@ public class SphereEntity extends Projectile {
 
                 ParticleUtils.addParticle(
                         affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
-                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(158,5,0) :
-                                spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
+                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(158, 5, 0) :
+                                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
                                 offset * Math.cos(angle),
                                 (random.nextDouble() - 0.5) * 0.1,
                                 offset * Math.sin(angle)
                         ),
                         Vec3.ZERO,
                         ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(50))
+                        affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(25 / 20f, 1).asConsumerTicker()) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeIn(15 / 20f, 1).asConsumerTicker()) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeIn(50 / 20f, 1).asConsumerTicker())
                 );
             }
 
@@ -314,16 +323,16 @@ public class SphereEntity extends Projectile {
 
                         ParticleUtils.addParticle(
                                 affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
-                                        affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(155,38,182) :
-                                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128,5,0) :
-                                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
+                                        affinity == Affinity.LIGHTNING ? new MAParticleType(ParticleInit.SPARKLE_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(155, 38, 182) :
+                                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleInit.DROPLET.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(128, 5, 0) :
+                                                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), position().add(
                                         radius * Math.cos(angle),
                                         (random.nextDouble() - 0.5) * 0.2,
                                         radius * Math.sin(angle)
                                 ),
                                 new Vec3(-Math.sin(angle), 0, Math.cos(angle)).scale(0.02),
                                 ParticleUtils.EMPTY_TICKER,
-                                affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(25)) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(125))
+                                affinity == Affinity.LIGHTNING ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeIn(25 / 20f, 1).asConsumerTicker()) : affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeIn(15 / 20f, 1).asConsumerTicker()) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeIn(125 / 20f, 1).asConsumerTicker())
                         );
                     }
                 }
@@ -365,6 +374,10 @@ public class SphereEntity extends Projectile {
         if (POWER.equals(key)) {
             refreshDimensions();
         }
+    }
+
+    public int precision() {
+        return (int) spellHolder.getSpell().getShape().getValue(Attribute.PRECISION);
     }
 
     public void setSpell(ISpellDefinition spell) {

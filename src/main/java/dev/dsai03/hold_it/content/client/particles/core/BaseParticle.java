@@ -5,7 +5,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-public abstract class BaseParticle<T extends BaseParticle<T>> implements IParticle {
+public abstract class BaseParticle<T extends BaseParticle<T>> implements IParticle, IParticleWithMaxLifetime {
     public abstract void setPos(Vec3 pos);
 
     public abstract Vec3 getPos();
@@ -76,5 +76,20 @@ public abstract class BaseParticle<T extends BaseParticle<T>> implements IPartic
     public final T maxLifetime(float maxLifetime) {
         this.maxLifetime = maxLifetime;
         return cast();
+    }
+
+    @Override
+    public void setLifetime(float lifetime) {
+        this.lifetime = lifetime;
+    }
+
+    @Override
+    public float getLifetime() {
+        return lifetime;
+    }
+
+    @Override
+    public float getMaxLifetime() {
+        return maxLifetime;
     }
 }

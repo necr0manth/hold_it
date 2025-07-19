@@ -9,6 +9,8 @@ import com.mna.api.spells.targeting.SpellSource;
 import com.mna.api.spells.targeting.SpellTarget;
 import dev.dsai03.hold_it.content.client.particles.ParticleBallFx;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleAccess;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleTickerHolder;
 import dev.dsai03.hold_it.content.client.particles.lightnings.LightningBall;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
 import dev.dsai03.hold_it.util.AffinityDistribution;
@@ -97,8 +99,11 @@ public class BigBallEntity extends ThrowableProjectile {
         if (level().isClientSide)
             clientTick();
     }
+
     private LightningBall lightningBall;
-    @OnlyIn(Dist.CLIENT)public void clientTick() {
+
+    @OnlyIn(Dist.CLIENT)
+    public void clientTick() {
         var affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
         var affinities = AffinityDistribution.fromSpell(spellHolder.getSpell());
         float power = entityData.get(POWER);
@@ -135,7 +140,7 @@ public class BigBallEntity extends ThrowableProjectile {
                                         spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
                         position().subtract(pos).normalize().scale(0.03),
                         ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(15)) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.fadeInHuy(affinity == Affinity.LIGHTNING ? 25 : 40))
+                        affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(15).asConsumerTicker()) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(affinity == Affinity.LIGHTNING ? 25 : 40).asConsumerTicker())
                 );
             }
         }
@@ -259,7 +264,7 @@ public class BigBallEntity extends ThrowableProjectile {
             return;
         }
         var targets = new ArrayList<SpellTarget>();
-        var power = entityData.get(POWER)*2.5;
+        var power = entityData.get(POWER) * 2.5;
         for (int i = -Mth.ceil(power); i <= Mth.ceil(power); i++) {
             for (int j = -Mth.ceil(power); j <= Mth.ceil(power); j++) {
                 for (int k = -Mth.ceil(power); k <= Mth.ceil(power); k++) {

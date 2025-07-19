@@ -62,7 +62,7 @@ public class AwesomeSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     public float chargeTime() {
-        return 2 * maxBalls();
+        return maxBalls();
     }
 
     public int precision() {

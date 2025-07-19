@@ -2,6 +2,8 @@ package dev.dsai03.hold_it.content.client.particles.lightnings;
 
 import com.mojang.math.Axis;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleAccess;
+import dev.dsai03.hold_it.content.client.particles.core.ParticleTickerHolder;
 import dev.dsai03.hold_it.util.ClientScheduler;
 import lombok.AllArgsConstructor;
 import net.minecraft.client.Minecraft;
@@ -94,7 +96,7 @@ public class LightningBall {
                                     p.setPos(pos.add(segments[finalI].start));
                                     p.setEndPos(pos.add(segments[finalI].end));
                                 }
-                        ).addRenderTicker(ParticleUtils.fadeIn(fadeIn))
+                        ).addRenderTicker(ParticleUtils.fadeIn(fadeIn).asRenderTicker())
                         .addTicker(p -> removed)
                         .addTicker(p -> {
                             p.regenerate();
@@ -113,7 +115,7 @@ public class LightningBall {
         public void fadeOut(float time) {
             ClientScheduler.schedule(Mth.ceil(20 * time), this::remove);
             for (var p : particles)
-                p.addRenderTicker(ParticleUtils.fadeOut(time));
+                p.addRenderTicker(ParticleUtils.fadeOut(time).asRenderTicker());
         }
 
         Quaternionf rotation;

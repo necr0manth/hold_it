@@ -19,8 +19,478 @@
 			}
 		]
 	},
-	"Shape: Pork Pulse": {
+	"Shape: Sphere of Holding": {
+		"index": 1,
+		"category": "sorcery",
+		"sections": [
+			{
+				"type": "title",
+				"value": "Shape: Sphere of Holding"
+			},
+			{
+				"type": "text",
+				"json": [
+					{
+						"text": "I have discovered a way to create a powerful containment field around myself. The "
+					},
+					{
+						"text": "Sphere of Holding",
+						"color": "blue"
+					},
+					{
+						"text": " requires careful preparation - as I channel the spell, magical particles dance around me, outlining the boundaries of what will become an area of absolute magical dominance.\n\n"
+					},
+					{
+						"text": "The process is methodical: I must hold my focus steady while the sphere charges. The longer I maintain concentration, the larger and more powerful the effect becomes. I've found that the charging time increases with the intended radius - a small price to pay for such comprehensive area control.\n\n"
+					},
+					{
+						"text": "What fascinates me most is how the sphere's energy creates beautiful particle trails that show exactly where blocks and entities will be affected. It's as if the magic itself is warning targets of their impending fate.\n\n"
+					},
+					{
+						"text": "Attributes:\n",
+						"color": "dark_purple"
+					},
+					{
+						"text": "• "
+					},
+					{
+						"text": "Magnitude",
+						"color": "blue"
+					},
+					{
+						"text": " (0.5-1.0): Controls the intensity of magical effect\n• "
+					},
+					{
+						"text": "Radius",
+						"color": "blue"
+					},
+					{
+						"text": " (5-20): Determines sphere size in blocks\n\n"
+					},
+					{
+						"text": "Notes:\n",
+						"color": "dark_red"
+					},
+					{
+						"text": "• Charging time scales with radius (radius × 0.2 seconds)\n• Visual effects reveal the sphere's boundaries on nearby surfaces\n• Affects both living creatures and inanimate blocks within range"
+					}
+				]
+			}
+		],
+		"related_recipes": [
+			{
+				"type": "spell_part",
+				"location": "hold_it:shapes/cool_shape"
+			}
+		]
+	},
+	"Shape: Orbs of Dominion": {
 		"index": 2,
+		"category": "sorcery",
+		"sections": [
+			{
+				"type": "title",
+				"value": "Shape: Orbs of Dominion"
+			},
+			{
+				"type": "text",
+				"json": [
+					{
+						"text": "This is perhaps one of my most ambitious magical achievements. The "
+					},
+					{
+						"text": "Orbs of Dominion",
+						"color": "blue"
+					},
+					{
+						"text": " allows me to create multiple independent spheres of magical energy, each acting with its own will and purpose.\n\n"
+					},
+					{
+						"text": "The complexity of maintaining several magical constructs simultaneously cannot be understated. Each orb requires significant mental fortitude to control, and the mana cost grows exponentially with the number of spheres I attempt to manifest.\n\n"
+					},
+					{
+						"text": "I've discovered that precision plays a crucial role in how effectively these orbs can track and engage their targets. A poorly calibrated spell might result in orbs that wander aimlessly, while a perfectly tuned casting creates a devastating coordinated assault.\n\n"
+					},
+					{
+						"text": "This spell demands respect and considerable experience. I would not recommend attempting it until one has mastered the fundamentals of magical manipulation.\n\n"
+					},
+					{
+						"text": "Complexity: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "High (20 units) | "
+					},
+					{
+						"text": "Experience Required: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "1000 XP\n\n"
+					},
+					{
+						"text": "Attributes:\n",
+						"color": "dark_purple"
+					},
+					{
+						"text": "• "
+					},
+					{
+						"text": "Magnitude",
+						"color": "blue"
+					},
+					{
+						"text": " (1-10): Number and power of orbs created\n• "
+					},
+					{
+						"text": "Precision",
+						"color": "blue"
+					},
+					{
+						"text": " (0-2): Targeting accuracy and coordination\n\n"
+					},
+					{
+						"text": "Warnings:\n",
+						"color": "dark_red"
+					},
+					{
+						"text": "• Extremely high mana consumption\n• Requires extensive magical training\n• Each orb operates independently once created"
+					}
+				]
+			}
+		],
+		"related_recipes": [
+			{
+				"type": "spell_part",
+				"location": "hold_it:shapes/awesome_shape"
+			}
+		]
+	},
+	"Shape: Delayed Manifestation": {
+		"index": 3,
+		"category": "sorcery",
+		"sections": [
+			{
+				"type": "title",
+				"value": "Shape: Delayed Manifestation"
+			},
+			{
+				"type": "text",
+				"json": [
+					{
+						"text": "A tactical masterpiece that has saved my life on numerous occasions. "
+					},
+					{
+						"text": "Delayed Manifestation",
+						"color": "blue"
+					},
+					{
+						"text": " allows me to prepare magical effects that will trigger after a predetermined time, creating opportunities for strategic planning that would otherwise be impossible.\n\n"
+					},
+					{
+						"text": "The beauty of this spell lies not in its raw power, but in its versatility. I can set magical traps for unsuspecting enemies, prepare defensive measures before entering dangerous areas, or coordinate complex multi-stage magical assaults.\n\n"
+					},
+					{
+						"text": "The compact radius makes it perfect for precise applications where collateral damage must be minimized. However, I've learned that the delay can be both a blessing and a curse - timing is everything when using this spell effectively.\n\n"
+					},
+					{
+						"text": "Cooldown: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "40 ticks (2 seconds)\n\n"
+					},
+					{
+						"text": "Attributes:\n",
+						"color": "dark_purple"
+					},
+					{
+						"text": "• "
+					},
+					{
+						"text": "Magnitude",
+						"color": "blue"
+					},
+					{
+						"text": " (1-100): Intensity of the delayed effect\n• "
+					},
+					{
+						"text": "Radius",
+						"color": "blue"
+					},
+					{
+						"text": " (1-4): Compact area of effect\n• "
+					},
+					{
+						"text": "Delay",
+						"color": "blue"
+					},
+					{
+						"text": " (1-10): Seconds before activation\n\n"
+					},
+					{
+						"text": "Tactical Uses:\n",
+						"color": "dark_green"
+					},
+					{
+						"text": "• Setting magical ambushes\n• Preparing defensive barriers\n• Creating timed magical sequences\n• Precise target elimination"
+					}
+				]
+			}
+		],
+		"related_recipes": [
+			{
+				"type": "spell_part",
+				"location": "hold_it:shapes/seven_shape"
+			}
+		]
+	},
+	"Shape: Massive Orb": {
+		"index": 4,
+		"category": "sorcery",
+		"sections": [
+			{
+				"type": "title",
+				"value": "Shape: Massive Orb"
+			},
+			{
+				"type": "text",
+				"json": [
+					{
+						"text": "Sometimes, subtlety is not required. The "
+					},
+					{
+						"text": "Massive Orb",
+						"color": "blue"
+					},
+					{
+						"text": " represents my approach to overwhelming magical force - a spell designed for those moments when sheer power and rapid deployment are the only viable strategies.\n\n"
+					},
+					{
+						"text": "What makes this spell remarkable is its incredibly short cooldown period. While other complex spells require lengthy preparation between castings, the Massive Orb can be unleashed repeatedly in quick succession. This makes it invaluable for sustained magical combat or when facing multiple threats.\n\n"
+					},
+					{
+						"text": "The trade-off, however, is significant. The spell's complexity demands a wizard of considerable skill and experience. I would not attempt this without having first mastered several other advanced magical techniques.\n\n"
+					},
+					{
+						"text": "I've found it particularly effective when I need to maintain constant magical pressure on a target or area. The rapid cooldown allows for a relentless magical assault that few enemies can withstand.\n\n"
+					},
+					{
+						"text": "Complexity: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "High (25 units) | "
+					},
+					{
+						"text": "Cooldown: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "10 ticks (0.5 seconds)\n\n"
+					},
+					{
+						"text": "Combat Applications:\n",
+						"color": "dark_red"
+					},
+					{
+						"text": "• Rapid-fire magical bombardment\n• Sustained area denial\n• Overwhelming single targets\n• Breaking through magical defenses\n\n"
+					},
+					{
+						"text": "Requirements:\n",
+						"color": "dark_purple"
+					},
+					{
+						"text": "• Advanced magical training\n• High mana reserves\n• Experience with complex spell structures"
+					}
+				]
+			}
+		],
+		"related_recipes": [
+			{
+				"type": "spell_part",
+				"location": "hold_it:shapes/big_ball_shape"
+			}
+		]
+	},
+	"Shape: Ethereal Blade": {
+		"index": 5,
+		"category": "sorcery",
+		"sections": [
+			{
+				"type": "title",
+				"value": "Shape: Ethereal Blade"
+			},
+			{
+				"type": "text",
+				"json": [
+					{
+						"text": "The culmination of my research into autonomous magical constructs, the "
+					},
+					{
+						"text": "Ethereal Blade",
+						"color": "blue"
+					},
+					{
+						"text": " bridges the gap between summoning and projection magic. This spectral weapon exists independently once created, carrying out its purpose with unwavering determination.\n\n"
+					},
+					{
+						"text": "What fascinates me about this spell is its dynamic nature. The mana cost fluctuates based on every aspect I choose to enhance - the blade's power, its duration in our realm, and the speed at which it moves. I've derived a formula for this: "
+					},
+					{
+						"text": "Cost = 0.5 × Power × Speed × √Duration",
+						"color": "dark_purple"
+					},
+					{
+						"text": ".\n\n"
+					},
+					{
+						"text": "The blade operates with its own ethereal intelligence, pursuing targets and objectives without requiring my continued concentration. This frees me to focus on other magical endeavors while the blade fulfills its purpose.\n\n"
+					},
+					{
+						"text": "I've found countless tactical applications: creating diversions, eliminating distant threats, or simply maintaining a persistent magical presence in an area. The versatility is remarkable.\n\n"
+					},
+					{
+						"text": "Complexity: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "Medium-High (15 units) | "
+					},
+					{
+						"text": "Experience Required: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "200 XP | "
+					},
+					{
+						"text": "Cooldown: ",
+						"color": "dark_purple"
+					},
+					{
+						"text": "40 ticks\n\n"
+					},
+					{
+						"text": "Attributes:\n",
+						"color": "dark_purple"
+					},
+					{
+						"text": "• "
+					},
+					{
+						"text": "Magnitude",
+						"color": "blue"
+					},
+					{
+						"text": " (1-30): Blade's power and size\n• "
+					},
+					{
+						"text": "Duration",
+						"color": "blue"
+					},
+					{
+						"text": " (1-30): How long the blade persists\n• "
+					},
+					{
+						"text": "Speed",
+						"color": "blue"
+					},
+					{
+						"text": " (0.1-5.0): Movement velocity\n\n"
+					},
+					{
+						"text": "Unique Properties:\n",
+						"color": "dark_green"
+					},
+					{
+						"text": "• Operates independently after creation\n• Dynamic mana cost calculation\n• Adaptable to various tactical situations\n• Can persist while caster performs other actions"
+					}
+				]
+			}
+		],
+		"related_recipes": [
+			{
+				"type": "spell_part",
+				"location": "hold_it:shapes/portal_sword_shape"
+			}
+		]
+	},
+	"Charging Mechanics": {
+		"index": 6,
+		"category": "sorcery",
+		"sections": [
+			{
+				"type": "title",
+				"value": "The Art of Charging Spells"
+			},
+			{
+				"type": "text",
+				"json": [
+					{
+						"text": "Through my extensive research, I have developed a new paradigm of spellcasting that emphasizes preparation and focus over rapid execution. These "
+					},
+					{
+						"text": "charging spells",
+						"color": "blue"
+					},
+					{
+						"text": " require the caster to maintain concentration while magical energy builds to the desired intensity.\n\n"
+					},
+					{
+						"text": "The process is both meditative and dangerous. As I hold my focus, magical particles begin to manifest around me, creating beautiful displays that reveal the spell's intended area of effect. These visual cues serve as both warning and wonder - alerting potential targets while satisfying the aesthetic sensibilities that all true wizards appreciate.\n\n"
+					},
+					{
+						"text": "I must emphasize the importance of patience. While it may be tempting to release a partially charged spell, doing so significantly reduces its effectiveness. The relationship between charging time and spell power is not linear - the final moments of charging often provide the most dramatic increases in potency.\n\n"
+					},
+					{
+						"text": "Technique:\n",
+						"color": "dark_purple"
+					},
+					{
+						"text": "1. "
+					},
+					{
+						"text": "Preparation: ",
+						"color": "blue"
+					},
+					{
+						"text": "Hold the casting focus and begin channeling energy\n2. "
+					},
+					{
+						"text": "Visualization: ",
+						"color": "blue"
+					},
+					{
+						"text": "Watch as particles reveal the spell's future impact\n3. "
+					},
+					{
+						"text": "Release: ",
+						"color": "blue"
+					},
+					{
+						"text": "When fully charged, release to activate the spell\n4. "
+					},
+					{
+						"text": "Recovery: ",
+						"color": "blue"
+					},
+					{
+						"text": "Allow for cooldown before attempting another casting\n\n"
+					},
+					{
+						"text": "Warning: ",
+						"color": "dark_red"
+					},
+					{
+						"text": "Insufficient mana or premature release will result in diminished effects. Interruption can waste valuable magical resources and leave the caster vulnerable."
+					}
+				]
+			}
+		]
+	},
+	"Shape: Pork Pulse": {
+		"index": 7,
 		"category": "sorcery",
 		"sections": [
 			{
@@ -35,12 +505,12 @@
 		"related_recipes": [
 			{
 				"type": "spell_part",
-        		"location": "hold_it:shapes/pork_pulse"
+				"location": "hold_it:shapes/pork_pulse"
 			}
 		]
 	},
 	"Component: Pork Warrior": {
-		"index": 2,
+		"index": 8,
 		"category": "sorcery",
 		"sections": [
 			{
@@ -49,14 +519,14 @@
 			},
 			{
 				"type": "text",
-				"value": "This will turn targeted pork chop stacks on the ground into pork based summons.  More pork in the stack, stronger summons."
+				"value": "This will turn targeted pork chop stacks on the ground into pork based summons. More pork in the stack, stronger summons."
 			}
 		],
 		"related_recipes": [
 			{
 				"type": "spell_part",
-        		"location": "hold_it:shapes/pork_warrior"
+				"location": "hold_it:shapes/pork_warrior"
 			}
 		]
-	}	
+	}
 }

@@ -56,7 +56,7 @@ public class ParticleBallFx {
 
             if (affinity == Affinity.WIND) {
                 for (int j = 0; j < 5; j++) {
-                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.ARCANE.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(50, 50, 50)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius() * 0.8f), Vec3.ZERO)).offset(positionSupplier).addTicker(p -> {
+                    OffsetedParticleEngine.instance.addParticle(new OffsetedParticle(ParticleUtils.createParticle(data.particleTypePrepare.apply(new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(50, 50, 50)), Minecraft.getInstance().level, RandomUtils.randomVectorFromBall().scale(ballData.radius() * 0.8f), Vec3.ZERO)).offset(positionSupplier).addTicker(p -> {
                         if (p.getSpeed().length() < 0.001f) {
                             p.setSpeed(RandomUtils.randomVectorFromBall().scale(0.3f * p.getPos().length()));
                         }

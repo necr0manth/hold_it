@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.dsai03.hold_it.content.client.particles.core.BaseParticle;
 import dev.dsai03.hold_it.content.client.particles.core.IColoredParticle;
 import dev.dsai03.hold_it.content.client.particles.ParticleUtils;
+import dev.dsai03.hold_it.content.client.particles.core.IParticleWithLifetime;
 import dev.dsai03.hold_it.mixins.client.ParticleEngineAccessor;
 import lombok.Getter;
 import net.minecraft.client.Camera;
@@ -19,7 +20,7 @@ import java.awt.*;
 import java.util.List;
 import java.util.Random;
 
-public class LightningParticle extends BaseParticle<LightningParticle> implements IColoredParticle {
+public class LightningParticle extends BaseParticle<LightningParticle> implements IColoredParticle, IParticleWithLifetime {
     @Override
     public Color getColor() {
         return color;

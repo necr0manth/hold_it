@@ -14,7 +14,7 @@ import net.minecraft.world.level.Level;
 public class SpellSevenShape extends BaseChargeableSpellShape<SpellSevenShapeEntity> {
     public SpellSevenShape(ResourceLocation guiIcon) {
         super(guiIcon, new AttributeValuePair(Attribute.MAGNITUDE, 10, 1, 100, 5, 1),
-                new AttributeValuePair(Attribute.RADIUS, 2, 1, 4, 0.1f, 1), new AttributeValuePair(Attribute.DELAY, 1, 1, 10, 1, 1));
+                new AttributeValuePair(Attribute.RADIUS, 2, 1, 4, 0.1f, 1), new AttributeValuePair(Attribute.DELAY, 1, 1, 10, 1, 1), new AttributeValuePair(Attribute.PRECISION, 0, 0, 2, 1, 0));
     }
 
     @Override
