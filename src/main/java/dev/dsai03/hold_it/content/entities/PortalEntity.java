@@ -87,7 +87,7 @@ public class PortalEntity extends Entity {
             float followViewFactor = isActivated() ? MathUtils.clamp01(1 - (float) (tickCount - entityData.get(ACTIVATION_TIME)) / followViewTime) : 1;
             var currentView = getLookAngle();
             var targetView = getCaster().getLookAngle();
-            var target = MathUtils.rotateTowards(currentView, targetView, followViewFactor * followViewSpeed);
+            var target = MyAwesomeMathUtils.rotateTowards(currentView, targetView, followViewFactor * followViewSpeed);
             double d3 = Math.sqrt(target.x * target.x + target.z * target.z);
             this.setXRot(Mth.wrapDegrees((float) (-(Mth.atan2(target.y, d3) * (double) (180F / (float) Math.PI)))));
             this.setYRot(Mth.wrapDegrees((float) (Mth.atan2(target.z, target.x) * (double) (180F / (float) Math.PI)) - 90.0F));

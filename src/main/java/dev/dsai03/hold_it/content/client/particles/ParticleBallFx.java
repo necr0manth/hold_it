@@ -49,7 +49,7 @@ public class ParticleBallFx {
         if (ballData == null)
             return;
         Supplier<Vec3> positionSupplier = () -> Optional.ofNullable(ballDataSupplier.get()).map(BallData::pos).orElse(null);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10*Math.pow(ballData.radius,3); i++) {
             var affinity = affinities.without(Affinity.LIGHTNING).getRandomAffinity();
             if (affinity == null)
                 break;

@@ -87,7 +87,7 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
 
     @Override
     public float getRequestedManaCost() {
-        return (float) (0.5* Math.min(magnitude(), getLifetime() / portalSpawnDelay()) * speed() * Math.sqrt(duration()) * getBaseSpellManaCost());
+        return (float) (0.5 * Math.min(magnitude(), getLifetime() / portalSpawnDelay()) * speed() * Math.sqrt(duration()) * getBaseSpellManaCost());
     }
 
     protected void applySpell(float manaCost, float casterMana) {
@@ -97,7 +97,7 @@ public class PortalSwordShapeEntity extends ChargeableSpellEntity {
     @Override
     protected void spellTick() {
         if (level().isClientSide) return;
-        int targetPortalCount = (int) (getManaCost() / getBaseSpellManaCost());
+        int targetPortalCount = (int) (getManaCost() / speed() / Math.sqrt(duration()) / getBaseSpellManaCost() / 0.5f + 0.0001f);
         if (targetPortalCount > portals.size()) {
             spawnPortal();
         }

@@ -38,27 +38,21 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         super(entityType, world);
     }
 
+    @Override
+    protected void spellTick() {
+        if (ballRef.get() == null) {
+            var ball = new BigBallEntity(level(), this);
+            level().addFreshEntity(ball);
+            ballRef.set(ball);
+        }
+    }
+
     public BigBallSpellShapeEntity(LivingEntity caster, Level world, ISpellDefinition spell) {
         super(AwesomeEntityTypes.BIG_BALL_SPELL_SHAPE.get(), caster, spell, world);
     }
 
-    public static final float defaultPower = 3f;
-    public static final float distanceToProjectile = 60.5f;
-
-    public static float radius() {
-        return 10f;
-    }
-
-    public float magnitude() {
-        return Objects.requireNonNull(getSpell().getShape()).getValue(Attribute.MAGNITUDE);
-    }
-
-    public static float chargeTime() {
-        return 3f;
-    }
-
-    public static float maxChargeTime() {
-        return 20;
+    public float chargeTime() {
+        return radius();
     }
 
     @Override
@@ -79,44 +73,11 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
         ballRef.load(compound);
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-        if (level().isClientSide)
-            return;
-
-        if (getCaster() == null || !getCaster().isUsingItem()) {
-            var projectile = ballRef.get();
-            this.discard();
-            return;
-        }
-
-        var centerPos = getCaster().getEyePosition().add(getCaster().getLookAngle().scale(distanceToProjectile));
-        var projectile = ballRef.get();
-        float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
-
-        if (projectile != null) {
-            projectile.setPower(power);
-        } else {
-            var proj = new BigBallEntity(level(), this);
-            proj.setSpell(getSpell());
-            proj.setPos(centerPos);
-            proj.setPower(power);
-            level().addFreshEntity(proj);
-            ballRef.set(proj);
-        }
+    public BallData getBallData(float partialTick) {
+        var power = Math.min(getLifetime() / chargeTime(), 1) * radius();
+        return new BallData(getCaster().getEyePosition(partialTick).add(getCaster().getViewVector(partialTick).scale(power * 1.5)), power);
     }
 
-    @Override
-    protected void spellTick() {
-        if (level().isClientSide) {
-            clientTick();
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private void clientTick() {
-    }
 
     @Override
     public float getRequestedManaCost() {
@@ -124,37 +85,15 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
     }
 
     private float getCharge() {
-        return Math.max(getLifetime() / chargeTime(), 1);
+        return Math.min(getLifetime() / chargeTime(), 1);
     }
 
+    public float magnitude() {
+        return getSpell().getShape().getValue(Attribute.MAGNITUDE);
+    }
 
-    protected List<SpellTarget> target() {
-        var targets = new ArrayList<SpellTarget>();
-        var sphere = ballRef.get();
-        float power = Math.min(getLifetime() / chargeTime(), 1) * defaultPower;
-        float radius = radius() * power;
-        if (sphere == null) return targets;
-
-        level().getEntities(getCaster(), sphere.getBoundingBox().inflate(radius),
-                        (Entity e) -> e != this && e != sphere && e.position().distanceTo(sphere.position()) < radius)
-                .stream().map(SpellTarget::new).forEach(targets::add);
-
-        for (int i = -Mth.ceil(radius); i <= Mth.ceil(radius); i++) {
-            for (int j = -1; j <= Mth.ceil(radius); j++) {
-                for (int k = -Mth.ceil(radius); k <= Mth.ceil(radius); k++) {
-                    var pos = BlockPos.containing(sphere.position().add(i, j, k));
-                    if (pos.getCenter().distanceTo(sphere.position()) > radius)
-                        continue;
-                    if (level().getBlockState(pos).isAir())
-                        continue;
-                    if (j == -1)
-                        targets.add(new SpellTarget(pos, Direction.UP));
-                    else
-                        targets.add(new SpellTarget(pos, null));
-                }
-            }
-        }
-        return targets;
+    public float radius() {
+        return getSpell().getShape().getValue(Attribute.RADIUS);
     }
 
     public void applySpell(float manaCost, float casterMana) {
@@ -166,5 +105,8 @@ public class BigBallSpellShapeEntity extends ChargeableSpellEntity {
 
     @Override
     protected void onInterrupt(InterruptReason reason) {
+        var ball = ballRef.get();
+        if (ball != null)
+            ball.discard();
     }
 }

@@ -1,12 +1,50 @@
 {
 	"item.hold_it.mark_of_the_example_faction": "Mark of the Example Faction",
 
+	// Spell Shape Names
+	"hold_it:cool_shape": "Aura",
+	"hold_it:awesome_shape": "Coalescence",
+	"hold_it:seven_shape": "Vortex",
+	"hold_it:big_ball_shape": "Greater Projectile",
+	"hold_it:portal_sword_shape": "Swordstorm",
+
+	// Cool Shape (Aura) Attributes
+	"hold_it:cool_shape.desc": "Creates a powerful containment field that charges over time. Visual effects show sphere boundaries on block surfaces.",
+	"hold_it:cool_shape.desc.magnitude": "Controls the intensity of magical effect (0.5-1.0). Higher values create more powerful impacts.",
+	"hold_it:cool_shape.desc.radius": "Determines sphere size in blocks (5-20). Larger radius requires longer charging time.",
+
+	// Awesome Shape (Coalescence) Attributes
+	"hold_it:awesome_shape.desc": "Creates multiple independent magical spheres from ancient projectile group creation techniques.",
+	"hold_it:awesome_shape.desc.magnitude": "Number and power of energy orbs created (1-10). Each orb operates with semi-autonomous intelligence.",
+	"hold_it:awesome_shape.desc.precision": "Coordination and targeting accuracy (0-2). Perfect precision creates devastating synchronized attacks.",
+
+	// Seven Shape (Vortex) Attributes
+	"hold_it:seven_shape.desc": "Condenses mana into a solid vortex that explodes with powerful pulse, with selective targeting capabilities.",
+	"hold_it:seven_shape.desc.magnitude": "Power of the vortex explosion (1-100). Determines the intensity of the delayed effect.",
+	"hold_it:seven_shape.desc.radius": "Size of the vortex area in blocks (1-4). Compact radius perfect for precise applications.",
+	"hold_it:seven_shape.desc.delay": "Time in seconds before automatic activation (1-10). Timing is everything for effective use.",
+
+	// Big Ball Shape (Greater Projectile) Attributes
+	"hold_it:big_ball_shape.desc": "Forms substantial and stable projectiles with high arcane density but reduced velocity.",
+	"hold_it:big_ball_shape.desc.magnitude": "Size and power of the projectile. Higher values create larger area of effect upon impact.",
+	"hold_it:big_ball_shape.desc.velocity": "Speed of the projectile. Arcane density comes at the cost of velocity - time casting carefully.",
+
+	// Portal Sword Shape (Swordstorm) Attributes
+	"hold_it:portal_sword_shape.desc": "Tears reality's fabric to forge swords of pure arcana delivered through dimensional rifts.",
+	"hold_it:portal_sword_shape.desc.magnitude": "Number and power of spectral blades (1-30). Each blade operates with targeting intelligence.",
+	"hold_it:portal_sword_shape.desc.duration": "How long the portals remain active (1-30 seconds). Longer duration means more sustained assault.",
+	"hold_it:portal_sword_shape.desc.speed": "Velocity of the arcane blades (0.1-5.0). Faster blades are harder to evade.",
+
+	// General Charging Mechanics
+	"hold_it.charging.tip": "Hold the cast button to charge spell power. Longer charging yields exponentially greater effects.",
+	"hold_it.charging.formula": "Mana cost scales with attributes. Portal Sword formula: 0.5 × Magnitude × Speed × √Duration",
+	"hold_it.charging.warning": "Premature release reduces effectiveness. Interruption wastes mana and leaves caster vulnerable.",
+
+	// Legacy entries (keep for compatibility)
 	"hold_it:pork_warrior": "Pork Warrior",
 	"hold_it:pork_warrior.desc.delay": "A delay in seconds before applying this component.",
 	"hold_it:pork_warrior.desc.duration": "How long the pork warrior will last.",
-	
 	"hold_it:pork_pulse": "Pork Pulse",
-	"hold_it:cool_shape": "Cool Shape",
 	"hold_it:pork_pulse.desc.delay": "A delay in seconds before applying this component.",
 	"hold_it:pork_pulse.desc.radius": "How large the pulse is to target dropped pork chops."
 }

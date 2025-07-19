@@ -112,7 +112,6 @@ public class SphereEntity extends Projectile {
     }
 
     private void explode() {
-
         if (level().isClientSide || getOwner() == null) return;
 
         List<SpellTarget> blockTargets = new ArrayList<>();

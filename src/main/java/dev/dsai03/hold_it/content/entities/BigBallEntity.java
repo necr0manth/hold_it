@@ -3,6 +3,7 @@ package dev.dsai03.hold_it.content.entities;
 import com.mna.api.affinity.Affinity;
 import com.mna.api.particles.MAParticleType;
 import com.mna.api.particles.ParticleInit;
+import com.mna.api.spells.attributes.Attribute;
 import com.mna.api.spells.base.ISpellDefinition;
 import com.mna.api.spells.targeting.SpellContext;
 import com.mna.api.spells.targeting.SpellSource;
@@ -13,23 +14,20 @@ import dev.dsai03.hold_it.content.client.particles.core.ParticleAccess;
 import dev.dsai03.hold_it.content.client.particles.core.ParticleTickerHolder;
 import dev.dsai03.hold_it.content.client.particles.lightnings.LightningBall;
 import dev.dsai03.hold_it.init.AwesomeEntityTypes;
-import dev.dsai03.hold_it.util.AffinityDistribution;
-import dev.dsai03.hold_it.util.Entity2EntityReference;
-import dev.dsai03.hold_it.util.SpellHolder;
-import dev.dsai03.hold_it.util.SpellUtils;
+import dev.dsai03.hold_it.util.*;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
@@ -40,17 +38,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 public class BigBallEntity extends ThrowableProjectile {
     private static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> THROWN = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.BOOLEAN);
-    public static final EntityDataAccessor<Integer> ID = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<CompoundTag> SPELL = SynchedEntityData.defineId(BigBallEntity.class, EntityDataSerializers.COMPOUND_TAG);
-    private static final EntityDataAccessor<Float> MAX_POWER = SynchedEntityData.defineId(SphereEntity.class, EntityDataSerializers.FLOAT);
     private static final Entity2EntityReference.DataAccessor CASTER = new Entity2EntityReference.DataAccessor(BigBallEntity.class);
+    private static final EntityDataAccessor<CompoundTag> SPELL = SpellHolder.createDataAccessor(BigBallEntity.class);
     private Entity2EntityReference<LivingEntity> casterRef;
     private float lastPower = 1;
+    private double speed = -1;
     @Getter
     private SpellHolder spellHolder;
 
@@ -78,7 +77,7 @@ public class BigBallEntity extends ThrowableProjectile {
         this(AwesomeEntityTypes.BIG_BALL_ENTITY_TYPE.get(), level);
         setOwner(owner);
         casterRef.set(owner.getCaster());
-        setPos(owner.getEyePosition().add(owner.getLookAngle().scale(1.5f)).subtract(this.getBoundingBox().getCenter()));
+        spellHolder.setSpell(owner.getSpell());
     }
 
     public LivingEntity getCaster() {
@@ -86,13 +85,15 @@ public class BigBallEntity extends ThrowableProjectile {
     }
 
     public void tick() {
-        var caster = getCaster();
-        if (caster != null && getOwner() != null) {
-            setPos(caster.getEyePosition().add(caster.getLookAngle().scale(5)).subtract(0, entityData.get(POWER) / 2, 0));
+        if (getOwner() != null) {
+            var ballData = getOwner().getBallData(1);
+            setPower(ballData.power());
+            setPos(ballData.pos().subtract(0, getBbHeight()/2, 0));
         }
-
         super.tick();
-        if (entityData.get(POWER) != lastPower && !this.level().isClientSide) {
+        if (!level().isClientSide && speed != -1)
+            setDeltaMovement(getDeltaMovement().normalize().scale(speed));
+        if (entityData.get(POWER) != lastPower && !level().isClientSide) {
             lastPower = entityData.get(POWER);
             refreshDimensions();
         }
@@ -100,51 +101,13 @@ public class BigBallEntity extends ThrowableProjectile {
             clientTick();
     }
 
-    private LightningBall lightningBall;
-
     @OnlyIn(Dist.CLIENT)
     public void clientTick() {
-        var affinity = AffinityDistribution.fromSpell(spellHolder.getSpell()).getRandomAffinity();
-        var affinities = AffinityDistribution.fromSpell(spellHolder.getSpell());
-        float power = entityData.get(POWER);
-        float coreRadius = 0.05f + 0.95f * power;
-        int particleCount = (int) (20 + 45 * power);
-        Random random = new Random();
-// Handle LightningBall for lightning affinity
-        if (affinities.getAffinity(Affinity.LIGHTNING) != 0 && lightningBall == null) {
-            var baseColor = new Color(100, 67, 255);
-            float heightOffset = 1.0f; // Match particle offset
-            lightningBall = new LightningBall(Minecraft.getInstance().level, 10, baseColor, new Color(255, 67, 255), () -> 0.3f + 0.5f * entityData.get(POWER), () -> isRemoved() ? null : position().add(0, heightOffset, 0));
-            lightningBall.spawn(0.3f);
-        } else if (affinities.getAffinity(Affinity.LIGHTNING) == 0 && lightningBall != null) {
-            lightningBall.fadeOut(0.5f);
-            lightningBall = null;
+        if (fx == null) {
+            fxData = new ParticleBallFx.BallFxData(pt -> spellHolder.getSpell().colorParticle(pt, getCaster()), AffinityDistribution.fromSpell(spellHolder.getSpell()));
+            fx = new ParticleBallFx(() -> fxData, this::getFxBallData);
         }
-
-        float heightOffset = 1.0f;
-        Vec3 centerPos = position().add(0, heightOffset, 0);
-        for (int i = 0; i < particleCount; i++) {
-            if (random.nextFloat() < (true ? 0.5f : 0.3f)) {
-                double theta = random.nextDouble() * Math.PI;
-                double phi = random.nextDouble() * Math.PI * 2;
-                double r = affinity == Affinity.WIND ? coreRadius * 0.5 * (0.9 + 0.2 * random.nextDouble()) : coreRadius * (0.9 + 0.2 * random.nextDouble());
-
-                Vec3 pos = centerPos.add(
-                        r * Math.sin(theta) * Math.cos(phi),
-                        r * Math.cos(theta),
-                        r * Math.sin(theta) * Math.sin(phi)
-                );
-                ParticleUtils.addParticle(
-                        affinity == Affinity.WIND ? new MAParticleType(ParticleInit.AIR_VELOCITY.get()).setScale(random.nextFloat(0.02f, 0.05f)).setColor(177, 201, 223) :
-                                affinity == Affinity.BLOOD ? new MAParticleType(ParticleUtils.getParticleType(affinity)).setColor(128, 0, 32) :
-                                        spellHolder.getSpell().colorParticle(new MAParticleType(ParticleUtils.getParticleType(affinity)), getOwner()), pos,
-                        position().subtract(pos).normalize().scale(0.03),
-                        ParticleUtils.EMPTY_TICKER,
-                        affinity == Affinity.WIND ? ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(15).asConsumerTicker()) : ParticleUtils.relativeTo(() -> position(), ParticleUtils.<ParticleAccess>fadeIn(affinity == Affinity.LIGHTNING ? 25 : 40).asConsumerTicker())
-                );
-            }
-        }
-
+        fx.tick();
     }
 
     public void setPower(float power) {
@@ -153,17 +116,13 @@ public class BigBallEntity extends ThrowableProjectile {
 
     @OnlyIn(Dist.CLIENT)
     public void calculateRenderBallData() {
-        if (isRemoved())
+        if (isRemoved()) {
             renderBallData = null;
-        else if (getOwner() != null) {
-            var caster = getCaster();
-            if (caster == null)
-                renderBallData = null;
-            else {
-                var partialTick = Minecraft.getInstance().getFrameTime();
-                float power = entityData.get(POWER);
-                renderBallData = new BallData(new Vec3(Mth.lerp(partialTick, caster.xo, caster.getX()), Mth.lerp(partialTick, caster.yo, caster.getY()) + caster.getEyeHeight(), Mth.lerp(partialTick, caster.zo, caster.getZ())).add(caster.getViewVector(partialTick).scale(3)), power);
-            }
+            return;
+        }
+        if (getOwner() != null) {
+            var partialTick = Minecraft.getInstance().getFrameTime();
+            renderBallData = getOwner().getBallData(partialTick);
         } else
             renderBallData = new BallData(new Vec3(xo, yo, zo).lerp(position(), Minecraft.getInstance().getFrameTime()).add(0, getBbHeight() / 2, 0), entityData.get(POWER));
     }
@@ -186,15 +145,14 @@ public class BigBallEntity extends ThrowableProjectile {
 
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
-        var power = entityData.get(POWER);
+        var power = Math.min(entityData.get(POWER), 1);
         return new EntityDimensions(power, power, false);
     }
 
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(POWER, 0.0f);
-        this.entityData.define(ID, -1);
-        this.entityData.define(THROWN, false);
+        entityData.define(POWER, 0.0f);
+        entityData.define(THROWN, false);
         spellHolder = SpellHolder.createAndDefine(SPELL, entityData, "spell");
         casterRef = Entity2EntityReference.createAndDefine(CASTER, "caster", this);
     }
@@ -208,18 +166,14 @@ public class BigBallEntity extends ThrowableProjectile {
         }
     }
 
-    public void setSpell(ISpellDefinition spell) {
-        spellHolder.setSpell(spell);
-    }
-
     @Override
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putFloat("power", this.entityData.get(POWER));
         compound.putBoolean("thrown", this.entityData.get(THROWN));
-        compound.putInt("index", entityData.get(ID));
         spellHolder.save(compound);
         casterRef.save(compound);
+        compound.putDouble("speed", speed);
     }
 
     @Override
@@ -229,11 +183,12 @@ public class BigBallEntity extends ThrowableProjectile {
         entityData.set(THROWN, pCompound.getBoolean("thrown"));
         spellHolder.load(pCompound);
         casterRef.load(pCompound);
+        speed = pCompound.getDouble("speed");
     }
 
     @Override
     protected void onHitBlock(BlockHitResult hitResult) {
-        onHit(hitResult.getLocation().add(hitResult.getBlockPos().getCenter().subtract(hitResult.getLocation()).normalize().scale(0.1)));
+        onHit(hitResult.getLocation().add(hitResult.getBlockPos().getCenter().subtract(hitResult.getLocation()).normalize().scale(0.5)));
     }
 
     @Override
@@ -253,36 +208,50 @@ public class BigBallEntity extends ThrowableProjectile {
         onHit(hitResult.getLocation());
     }
 
+    public int precision() {
+        return (int) spellHolder.getSpell().getShape().getValue(Attribute.PRECISION);
+    }
+
     private void onHit(Vec3 location) {
-        if (level().isClientSide)
-            return;
-        if (getCaster() == null) {
-            discard();
-            return;
+        if (level().isClientSide || getOwner() != null) return;
+
+        java.util.List<SpellTarget> blockTargets = new ArrayList<>();
+        float power = entityData.get(POWER);
+        var maxPower = spellHolder.getSpell().getShape().getValue(Attribute.RADIUS);
+        var charge = Math.min(power / maxPower, 1);
+        var radius = 1.5f * power;
+        var entityRadius = 2 * power;
+        List<SpellTarget> targets = new ArrayList<>();
+        if (precision() != 2) {
+            level().getEntities(getCaster(), this.getBoundingBox().inflate(entityRadius),
+                            (Entity e) -> e != this && e.position().distanceTo(location) < entityRadius)
+                    .stream().map(SpellTarget::new).forEach(targets::add);
         }
-        if (!entityData.get(THROWN)) {
-            return;
-        }
-        var targets = new ArrayList<SpellTarget>();
-        var power = entityData.get(POWER) * 2.5;
-        for (int i = -Mth.ceil(power); i <= Mth.ceil(power); i++) {
-            for (int j = -Mth.ceil(power); j <= Mth.ceil(power); j++) {
-                for (int k = -Mth.ceil(power); k <= Mth.ceil(power); k++) {
-                    if (new Vec3(i, j, k).length() <= power)
-                        targets.add(new SpellTarget(BlockPos.containing(location.add(i, j, k)), null));
+
+        if (precision() != 1) {
+            for (int i = -Mth.ceil(radius); i <= Mth.ceil(radius) + 1; i++) {
+                for (int j = -Mth.ceil(radius); j <= Mth.ceil(radius) + 1; j++) {
+                    for (int k = -Mth.ceil(radius); k <= Mth.ceil(radius) + 1; k++) {
+                        var pos = BlockPos.containing(location.add(i, j, k));
+                        if (pos.getCenter().distanceTo(location) > radius)
+                            continue;
+                        if (level().getBlockState(pos).isAir())
+                            continue;
+                        blockTargets.add(new SpellTarget(pos, null));
+                    }
                 }
             }
+            Collections.shuffle(blockTargets);
+            targets.addAll(blockTargets);
         }
-        for (var target : targets) {
-            SpellSource source = new SpellSource(getCaster(), InteractionHand.MAIN_HAND);
-            SpellContext context = new SpellContext(this.level(), spellHolder.getSpell());
-            SpellUtils.cast(spellHolder.getSpell(), source, target, context);
-        }
+        var targetCount = spellHolder.getSpell().getShape().getValue(Attribute.MAGNITUDE) * charge;
+        SpellUtils.cast(spellHolder.getSpell(), new SpellSource(getCaster(), getCaster() instanceof Player player ? player.getUsedItemHand() : getCaster().swingingArm), targets, t -> new SpellContext(level(), spellHolder.getSpell()), spellHolder.getSpell().getManaCost(), spellHolder.getSpell().getManaCost() / targetCount, true);
         discard();
     }
 
     public void shoot(Vec3 dir) {
         entityData.set(THROWN, true);
-        shoot(dir.x, dir.y, dir.z, (float) (2 / (entityData.get(POWER) + 0.5)), 0);
+        shoot(dir.x, dir.y, dir.z, (float) (1 / (entityData.get(POWER) + 0.5)), 0);
+        speed = getDeltaMovement().length();
     }
 }
