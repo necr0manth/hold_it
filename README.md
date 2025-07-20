@@ -24,7 +24,7 @@ This project is addon to it, you should definitely first check it out
 https://www.curseforge.com/minecraft/mc-mods/mana-and-artifice?page=1
 ## Public access “(for customer)”
 We are more than summer project
-https://legacy.curseforge.com/minecraft/mc-mods/hold-it
+https://www.curseforge.com/minecraft/mc-mods/hold-it
 
 # Hyperlinks and etc.
 ## Development
