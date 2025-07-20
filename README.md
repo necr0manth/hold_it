@@ -2,7 +2,6 @@
 ![Icon](https://gitlab.pg.innopolis.university/my-awesome-group1/my-awesome-mna-addon/-/raw/main/logo.jpg?ref_type=heads)
 ## About "Hold it"
 Our addon is a modification for "Mana and Artifice". Addon adds chargeable spells. 
-Link to our product - (there suppose to be a link to curseforge page)   
 Link to DEMO video - https://www.youtube.com/watch?v=ozBsxAzulP0
 # Body
 ## Project goals and description
@@ -20,6 +19,13 @@ secondly you should have 1.20.1 "Mana and artifice" mod downloaded and be in .mi
 and after you have all of that you simply need to download addon from curseforge 
 and drop it into .minecraft/mods folder. P.S to access .minecraft/mods folder you should click win + r combination
 then write  %appdata% and here you will find .minecraft folder.
+## Link to Mana and Artifice “(for customer)”
+This project is addon to it, you should definitely first check it out
+https://www.curseforge.com/minecraft/mc-mods/mana-and-artifice?page=1
+## Public access “(for customer)”
+We are more than summer project
+https://legacy.curseforge.com/minecraft/mc-mods/hold-it
+
 # Hyperlinks and etc.
 ## Development
 ### Kanban board 
